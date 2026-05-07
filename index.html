@@ -1145,6 +1145,21 @@ async function loadState() {
   populateCityFilter();
 }
 
+// ===== EXPERIENCE FORMATTER =====
+function formatExperience(exp) {
+  if (!exp) return '';
+  // Extract number from string like "22", "22 years", "15+ years", etc.
+  const match = String(exp).match(/\d+/);
+  if (!match) return exp; // return as-is if no number found
+  const n = parseInt(match[0]);
+  if (n < 10) return n + ' years of experience';
+  if (n < 15) return '10+ years of experience';
+  if (n < 20) return '15+ years of experience';
+  if (n < 25) return '20+ years of experience';
+  if (n < 30) return '25+ years of experience';
+  return '30+ years of experience';
+}
+
 // ===== NAVIGATION =====
 function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -1316,7 +1331,7 @@ function openProfile(id) {
         <div class="profile-name">${p.name}</div>
         <div class="profile-role">${p.role} · ${p.city}</div>
         <div class="profile-tags">
-          <span class="tag">${p.experience}</span>
+          <span class="tag">${formatExperience(p.experience)}</span>
           <span class="tag">${p.visa}</span>
           <span class="availability-badge ${p.availability==='available'?'avail-yes':'avail-no'}" style="margin-top:0">${p.availability==='available'?'✓ AVAILABLE':'✗ UNAVAILABLE'}</span>
         </div>
