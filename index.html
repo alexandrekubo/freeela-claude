@@ -738,11 +738,11 @@
 <body>
 
 <nav>
-  <a class="nav-logo" data-page="home" style="cursor:pointer">FREEELA</a>
+  <a class="nav-logo" data-page="home" href="javascript:void(0)" onclick="showPage('home')">FREEELA</a>
   <div class="nav-links">
-    <a class="nav-link active" id="nav-home" data-page="home" style="cursor:pointer">HOME</a>
-    <a class="nav-link" id="nav-creatives" data-page="creatives" style="cursor:pointer">CREATIVES</a>
-    <a class="nav-link" id="nav-about" data-page="about" style="cursor:pointer">ABOUT</a>
+    <a class="nav-link active" id="nav-home" href="javascript:void(0)" onclick="showPage('home')">HOME</a>
+    <a class="nav-link" id="nav-creatives" href="javascript:void(0)" onclick="showPage('creatives')">CREATIVES</a>
+    <a class="nav-link" id="nav-about" href="javascript:void(0)" onclick="showPage('about')">ABOUT</a>
   </div>
 </nav>
 
@@ -1033,7 +1033,7 @@
 <footer>
   <div>
     <div class="footer-brand">FREEELA</div>
-    <div class="footer-sub">Connecting top-tier US-based creative talent with forward-thinking recruiters and agencies.</div>
+    <div class="footer-sub" data-v="v3">Connecting top-tier US-based creative talent with forward-thinking recruiters and agencies.</div>
   </div>
   <a href="mailto:alexandrekubo@gmail.com" class="footer-email">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
@@ -1280,7 +1280,7 @@ function openProfile(id) {
     : '<span style="font-family:Space Mono,monospace;font-size:0.7rem;color:#888">No booked dates</span>';
 
   document.getElementById('profile-content').innerHTML = `
-    <div class="profile-back"><a onclick="showPage('creatives')">← BACK TO CREATIVES</a></div>
+    <div class="profile-back"><a onclick="showPage('creatives')" href="javascript:void(0)">← BACK TO CREATIVES</a></div>
     <div class="profile-hero">
       <div class="profile-avatar-large" style="background:${bg}">${p.photo?`<img src="${p.photo}" alt="${p.name}">`:initials}</div>
       <div class="profile-info">
