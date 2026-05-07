@@ -738,11 +738,11 @@
 <body>
 
 <nav>
-  <a class="nav-logo" onclick="showPage('home')">FREEELA</a>
+  <a class="nav-logo" data-page="home" style="cursor:pointer">FREEELA</a>
   <div class="nav-links">
-    <a class="nav-link active" id="nav-home" onclick="showPage('home')">HOME</a>
-    <a class="nav-link" id="nav-creatives" onclick="showPage('creatives')">CREATIVES</a>
-    <a class="nav-link" id="nav-about" onclick="showPage('about')">ABOUT</a>
+    <a class="nav-link active" id="nav-home" data-page="home" style="cursor:pointer">HOME</a>
+    <a class="nav-link" id="nav-creatives" data-page="creatives" style="cursor:pointer">CREATIVES</a>
+    <a class="nav-link" id="nav-about" data-page="about" style="cursor:pointer">ABOUT</a>
   </div>
 </nav>
 
@@ -1571,6 +1571,15 @@ document.querySelector('.footer-brand').addEventListener('click', () => {
 });
 
 // ===== BOOT =====
+// Event delegation for nav links (avoids CSP issues with inline onclick)
+document.addEventListener('click', function(e) {
+  const navEl = e.target.closest('[data-page]');
+  if (navEl) {
+    e.preventDefault();
+    showPage(navEl.dataset.page);
+  }
+});
+
 loadState();
 </script>
 </body>
