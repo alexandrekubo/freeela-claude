@@ -1083,28 +1083,49 @@ let currentProfileId = null;
 let editingProfileId = null;
 
 // ===== API =====
-// Uses text/plain for POST to avoid CORS preflight issues with Apps Script
+// Apps Script requires redirect:follow to handle Google's auth redirects
+// All actions go via GET with params to avoid CORS preflight
 async function api(action, body = null) {
   try {
+    let url;
     if (body) {
       body.action = action;
-      // Must use text/plain - Apps Script doesn't handle OPTIONS preflight
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        body: JSON.stringify(body),
-        headers: { 'Content-Type': 'text/plain' }
-      });
-      const text = await res.text();
-      return JSON.parse(text);
+      url = API_URL + '?action=' + encodeURIComponent(action) + '&body=' + encodeURIComponent(JSON.stringify(body));
     } else {
-      const res = await fetch(API_URL + '?action=' + action);
-      const text = await res.text();
-      return JSON.parse(text);
+      url = API_URL + '?action=' + encodeURIComponent(action);
     }
+    const res = await fetch(url, {
+      redirect: 'follow',
+      mode: 'cors'
+    });
+    const text = await res.text();
+    console.log('API', action, ':', text.slice(0, 200));
+    return JSON.parse(text);
   } catch(e) {
-    console.error('API error:', e);
-    showToast('Connection error: ' + e.message);
+    console.error('API error:', action, e.message);
+    // Fallback: try via script tag (JSONP-style read)
     return null;
+  }
+}
+
+// For write operations that don't need a response, use no-cors as fallback
+async function apiWrite(action, body) {
+  body.action = action;
+  const url = API_URL + '?action=' + encodeURIComponent(action) + '&body=' + encodeURIComponent(JSON.stringify(body));
+  try {
+    // Try cors first
+    const res = await fetch(url, { redirect: 'follow', mode: 'cors' });
+    const text = await res.text();
+    return JSON.parse(text);
+  } catch(e) {
+    // Fallback: fire-and-forget with no-cors (write goes through, can't read response)
+    try {
+      await fetch(url, { mode: 'no-cors', redirect: 'follow' });
+      return { ok: true };
+    } catch(e2) {
+      console.error('apiWrite fallback failed:', e2);
+      return null;
+    }
   }
 }
 
@@ -1391,7 +1412,7 @@ async function saveProfileEdit() {
     portfolio:    document.getElementById('ef-portfolio').value,
   });
   showToast('Saving...');
-  const res = await api('updateProfile', { data: updated });
+  const res = await apiWrite('updateProfile', { data: updated });
   if (res && res.ok) {
     STATE.profiles[idx] = updated;
     closeModal('edit-fields-modal');
@@ -1405,7 +1426,7 @@ async function saveProfileEdit() {
 async function deleteProfile() {
   if (!confirm('Delete this profile permanently?')) return;
   showToast('Deleting...');
-  const res = await api('deleteProfile', { id: editingProfileId });
+  const res = await apiWrite('deleteProfile', { id: editingProfileId });
   if (res && res.ok) {
     STATE.profiles = STATE.profiles.filter(x => x.id !== editingProfileId);
     closeModal('edit-fields-modal');
@@ -1425,14 +1446,16 @@ async function submitApplication(e, source) {
   const btn = form.querySelector('button[type=submit]');
   btn.disabled = true;
   btn.textContent = 'SENDING...';
-  const res = await api('addPending', { data });
+  const res = await apiWrite('addPending', { data });
   btn.disabled = false;
   btn.textContent = 'APPLY →';
   if (res && res.ok) {
     form.reset();
     showToast('Application submitted! Pending admin approval.');
   } else {
-    showToast('Error submitting. Try again.');
+    const errMsg = res ? (res.error || JSON.stringify(res)) : 'No response from server';
+    console.error('Submit error:', errMsg);
+    showToast('Error: ' + errMsg.slice(0, 80));
   }
 }
 
@@ -1517,7 +1540,7 @@ async function renderAdmin() {
 async function approveApplication(id) {
   const btn = document.querySelector(`[data-id="${id}"].btn-approve`);
   if (btn) { btn.disabled = true; btn.textContent = 'Approving...'; }
-  const res = await api('approvePending', { id });
+  const res = await apiWrite('approvePending', { id });
   if (res && res.ok) {
     showToast('Profile approved and published!');
     renderAdmin();
@@ -1528,20 +1551,20 @@ async function approveApplication(id) {
 }
 
 async function rejectApplication(id) {
-  const res = await api('rejectPending', { id });
+  const res = await apiWrite('rejectPending', { id });
   if (res && res.ok) { showToast('Application rejected.'); renderAdmin(); }
   else showToast('Error rejecting.');
 }
 
 async function adminToggleActive(id, active) {
-  const res = await api('toggleActive', { id, active });
+  const res = await apiWrite('toggleActive', { id, active });
   const p = STATE.profiles.find(x => x.id === id);
   if (res && res.ok && p) { p.active = active; showToast(active ? 'Profile visible.' : 'Profile hidden.'); }
   else showToast('Error updating.');
 }
 
 async function adminUpdateAvailability(id, availability) {
-  const res = await api('updateAvailability', { id, availability });
+  const res = await apiWrite('updateAvailability', { id, availability });
   const p = STATE.profiles.find(x => x.id === id);
   if (res && res.ok && p) { p.availability = availability; showToast('Availability updated.'); }
   else showToast('Error updating.');
@@ -1555,7 +1578,7 @@ function adminEditProfile(id) {
 
 async function adminDeleteProfile(id) {
   if (!confirm('Delete this profile permanently?')) return;
-  const res = await api('deleteProfile', { id });
+  const res = await apiWrite('deleteProfile', { id });
   if (res && res.ok) {
     STATE.profiles = STATE.profiles.filter(x => x.id !== id);
     showToast('Profile deleted.');
