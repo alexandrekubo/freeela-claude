@@ -1083,23 +1083,27 @@ let currentProfileId = null;
 let editingProfileId = null;
 
 // ===== API =====
+// Uses text/plain for POST to avoid CORS preflight issues with Apps Script
 async function api(action, body = null) {
   try {
     if (body) {
       body.action = action;
+      // Must use text/plain - Apps Script doesn't handle OPTIONS preflight
       const res = await fetch(API_URL, {
         method: 'POST',
         body: JSON.stringify(body),
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'text/plain' }
       });
-      return await res.json();
+      const text = await res.text();
+      return JSON.parse(text);
     } else {
-      const res = await fetch(`${API_URL}?action=${action}`);
-      return await res.json();
+      const res = await fetch(API_URL + '?action=' + action);
+      const text = await res.text();
+      return JSON.parse(text);
     }
   } catch(e) {
     console.error('API error:', e);
-    showToast('Connection error. Check your Apps Script URL.');
+    showToast('Connection error: ' + e.message);
     return null;
   }
 }
