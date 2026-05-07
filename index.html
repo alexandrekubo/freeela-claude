@@ -881,7 +881,7 @@
   </div>
 
   <div class="filter-bar">
-    <input type="text" class="search-input" id="filter-search" placeholder="🔍  Search by name, agency, client..." oninput="renderCreatives()">
+    <input type="text" class="search-input" id="filter-search" placeholder="🔍  Search name, agency, client, industry, city..." oninput="renderCreatives(); populateCityFilter()">
     <select id="filter-role" onchange="renderCreatives()">
       <option value="">All Roles</option>
       <option>Creative Director, Art</option>
@@ -892,12 +892,13 @@
     </select>
     <select id="filter-avail" onchange="renderCreatives()">
       <option value="">All Availability</option>
-      <option value="available">Available</option>
-      <option value="unavailable">Unavailable</option>
+      <option value="available">✓ Available now</option>
+      <option value="unavailable">✗ Unavailable</option>
     </select>
     <select id="filter-city" onchange="renderCreatives()">
       <option value="">All Cities</option>
     </select>
+    <button onclick="clearFilters()" style="background:var(--black);color:var(--yellow);border:3px solid var(--black);padding:0.5rem 1rem;font-family:'Space Mono',monospace;font-size:0.72rem;font-weight:700;letter-spacing:1px;cursor:pointer;white-space:nowrap" title="Clear all filters">✕ CLEAR</button>
   </div>
 
   <div class="talent-section" id="talent-list"></div>
@@ -1073,44 +1074,50 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// ===== GLOBAL STATE (source of truth) =====
-let STATE = {
-  profiles: [],
-  pending: []
-};
+// ===== CONFIG — paste your Apps Script Web App URL here after deploying =====
+const API_URL = 'https://script.google.com/macros/s/AKfycbzY2rtEtdKlpkwY41pKM91ovee_OO3G29dHpZgBGMcOb-d30OP-6dQD26fDzSA0lcfcJg/exec';
 
+// ===== GLOBAL STATE =====
+let STATE = { profiles: [], pending: [] };
 let currentProfileId = null;
 let editingProfileId = null;
 
-// ===== PERSIST & LOAD =====
-function persist() {
+// ===== API =====
+async function api(action, body = null) {
   try {
-    localStorage.setItem('freeela_v2', JSON.stringify(STATE));
-  } catch(e) {}
-}
-
-function loadState() {
-  try {
-    const saved = localStorage.getItem('freeela_v2');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      STATE.profiles = parsed.profiles || [];
-      STATE.pending  = parsed.pending  || [];
+    if (body) {
+      body.action = action;
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return await res.json();
+    } else {
+      const res = await fetch(`${API_URL}?action=${action}`);
+      return await res.json();
     }
-  } catch(e) {}
-  // If no profiles yet, seed examples
-  if (STATE.profiles.length === 0) seedExamples();
+  } catch(e) {
+    console.error('API error:', e);
+    showToast('Connection error. Check your Apps Script URL.');
+    return null;
+  }
 }
 
-function seedExamples() {
-  STATE.profiles = [
-    { id:'s1', name:'Jordan Blake', role:'Creative Director, Art', experience:'15 years', agencies:'BBDO, Droga5', clients:'Nike, Google, Spotify', industries:'Tech, Sports, Fashion', visa:'US Citizen', city:'New York, NY', linkedin:'https://linkedin.com', portfolio:'https://example.com', email:'jordan@example.com', availability:'available', active:true, busyDates:['Jun 10-20','Jul 1-5'], photo:'', bio:'Award-winning Creative Director with 15 years at top agencies.' },
-    { id:'s2', name:'Alex Rivera', role:'Art Director', experience:'11 years', agencies:'Ogilvy, Leo Burnett', clients:'Coca-Cola, Ford, P&G', industries:'CPG, Automotive', visa:'Green Card', city:'Chicago, IL', linkedin:'https://linkedin.com', portfolio:'https://example.com', email:'alex@example.com', availability:'unavailable', active:true, busyDates:['May 15-Jun 30'], photo:'', bio:'Conceptual thinker with a passion for visual storytelling.' },
-    { id:'s3', name:'Sam Torres', role:'Copywriter', experience:'12 years', agencies:'Wieden+Kennedy, R/GA', clients:'Apple, Amazon, Netflix', industries:'Tech, Entertainment', visa:'US Citizen', city:'Los Angeles, CA', linkedin:'https://linkedin.com', portfolio:'https://example.com', email:'sam@example.com', availability:'available', active:true, busyDates:[], photo:'', bio:'Wordsmith with a knack for brand voice and long-form storytelling.' },
-    { id:'s4', name:'Morgan Lee', role:'Designer', experience:'10 years', agencies:'Publicis, Grey', clients:"L'Oreal, Unilever, LVMH", industries:'Beauty, Luxury, Fashion', visa:'H-1B', city:'Miami, FL', linkedin:'https://linkedin.com', portfolio:'https://example.com', email:'morgan@example.com', availability:'available', active:true, busyDates:['Jun 1-10'], photo:'', bio:'Brand identity and packaging design specialist.' },
-    { id:'s5', name:'Casey Kim', role:'Creative Director, Copy', experience:'14 years', agencies:'DDB, McCann', clients:'Microsoft, IBM, JP Morgan', industries:'Finance, B2B, Tech', visa:'US Citizen', city:'Seattle, WA', linkedin:'https://linkedin.com', portfolio:'https://example.com', email:'casey@example.com', availability:'available', active:true, busyDates:[], photo:'', bio:'Strategic storyteller who bridges brand and business goals.' },
-  ];
-  persist();
+// ===== LOADING UI =====
+function showLoading(id, msg = 'Loading...') {
+  const el = document.getElementById(id);
+  if (el) el.innerHTML = `<div style="text-align:center;padding:3rem;font-family:'Space Mono',monospace;font-size:0.85rem;color:#666">${msg}</div>`;
+}
+
+// ===== BOOT =====
+async function loadState() {
+  showLoading('talent-list', 'Loading creatives...');
+  const [profiles, pending] = await Promise.all([api('getProfiles'), api('getPending')]);
+  STATE.profiles = profiles || [];
+  STATE.pending  = pending  || [];
+  renderCreatives();
+  populateCityFilter();
 }
 
 // ===== NAVIGATION =====
@@ -1126,20 +1133,17 @@ function showPage(page) {
 }
 
 // ===== SEARCH =====
-// ===== SEARCH STATE (shared between home form and creatives filters) =====
 let SEARCH = { terms: '', roles: [], avail: '', city: '' };
 
 function searchTalent(e) {
   e.preventDefault();
-  const roles   = Array.from(document.getElementById('search-role').selectedOptions).map(o => o.value);
-  const client  = document.getElementById('search-client').value.trim();
-  const desc    = document.getElementById('search-desc').value.trim();
-  const city    = document.getElementById('search-city').value.trim();
-  // Build combined search terms from client + description
-  const terms = [client, desc].filter(Boolean).join(' ');
+  const roles  = Array.from(document.getElementById('search-role').selectedOptions).map(o => o.value);
+  const client = document.getElementById('search-client').value.trim();
+  const desc   = document.getElementById('search-desc').value.trim();
+  const city   = document.getElementById('search-city').value.trim();
+  const terms  = [client, desc].filter(Boolean).join(' ');
   SEARCH = { terms: terms.toLowerCase(), roles, avail: '', city: city.toLowerCase() };
   showPage('creatives');
-  // Apply to filter bar UI after page switch
   setTimeout(() => {
     document.getElementById('filter-search').value = terms;
     if (roles.length === 1) document.getElementById('filter-role').value = roles[0];
@@ -1158,31 +1162,17 @@ function populateCityFilter() {
 }
 
 function scoreProfile(p, search, roles, avail, city) {
-  // Hard filters first
   if (!p.active) return -1;
   if (avail && p.availability !== avail) return -1;
   if (city && !(p.city||'').toLowerCase().includes(city)) return -1;
   if (roles.length > 0 && !roles.includes(p.role)) return -1;
-
-  // If no search terms, everyone passes with score 1
   if (!search) return 1;
-
-  // Score by how many fields match the search terms
   const words = search.split(/\s+/).filter(Boolean);
-  const fields = [
-    (p.name       ||'').toLowerCase(),
-    (p.role       ||'').toLowerCase(),
-    (p.agencies   ||'').toLowerCase(),
-    (p.clients    ||'').toLowerCase(),
-    (p.industries ||'').toLowerCase(),
-    (p.city       ||'').toLowerCase(),
-    (p.bio        ||'').toLowerCase(),
-    (p.experience ||'').toLowerCase(),
-  ].join(' ');
-
+  const fields = [p.name, p.role, p.agencies, p.clients, p.industries, p.city, p.bio, p.experience]
+    .map(f => (f||'').toLowerCase()).join(' ');
   let score = 0;
   words.forEach(w => { if (fields.includes(w)) score++; });
-  return score; // 0 = no match, positive = match
+  return score;
 }
 
 function highlightMatch(text, search) {
@@ -1190,7 +1180,7 @@ function highlightMatch(text, search) {
   const words = search.split(/\s+/).filter(Boolean);
   let result = text;
   words.forEach(w => {
-    const re = new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    const re = new RegExp('(' + w.replace(/[.*+?^${}()|[\]\]/g, '\$&') + ')', 'gi');
     result = result.replace(re, '<mark style="background:#FFE500;padding:0 2px">$1</mark>');
   });
   return result;
@@ -1201,87 +1191,80 @@ function renderCreatives() {
   const role   = document.getElementById('filter-role').value;
   const avail  = document.getElementById('filter-avail').value;
   const city   = document.getElementById('filter-city').value.toLowerCase();
+  const roles  = role ? [role] : [];
 
-  const roles = role ? [role] : [];
-
-  // Score every profile
   const scored = STATE.profiles
     .map(p => ({ p, score: scoreProfile(p, search, roles, avail, city) }))
     .filter(x => x.score > 0)
     .sort((a, b) => b.score - a.score);
 
   const container = document.getElementById('talent-list');
+  const colors = ['#FFE500','#FF3CAC','#00E676','#00B4FF','#FF6B35'];
 
-  // Show result count
   const countBadge = scored.length > 0
     ? `<div style="font-family:'Space Mono',monospace;font-size:0.78rem;color:#555;margin-bottom:1.5rem;padding:0.5rem 0;border-bottom:2px solid #0a0a0a">
         ${search || role || avail || city
           ? `<span style="background:#0a0a0a;color:#FFE500;padding:0.2rem 0.7rem;font-weight:700">${scored.length} result${scored.length!==1?'s':''}</span> matching your search`
           : `<span style="background:#0a0a0a;color:#FFE500;padding:0.2rem 0.7rem;font-weight:700">${scored.length}</span> creatives available`}
-       </div>`
-    : '';
+       </div>` : '';
 
   if (scored.length === 0) {
     container.innerHTML = `<div class="no-results">NO CREATIVES FOUND<br><span style="font-size:1rem;font-family:'Space Mono',monospace;color:#aaa;letter-spacing:1px">Try different keywords or clear filters</span></div>`;
     return;
   }
 
-  // If searching, show flat ranked list; if browsing, group by role
-  const colors = ['#FFE500','#FF3CAC','#00E676','#00B4FF','#FF6B35'];
   let html = countBadge;
-
   if (search) {
-    // Flat ranked list
     html += `<div class="talent-grid">`;
     scored.forEach(({ p }) => {
       const initials = (p.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase();
-      const bg = colors[p.id.charCodeAt(p.id.length - 1) % colors.length];
-      html += `<div class="talent-card" onclick="openProfile('${p.id}')">
-        <div class="talent-card-top">
-          <div class="talent-avatar" style="background:${bg}">${p.photo ? `<img src="${p.photo}" alt="${p.name}">` : initials}</div>
-          <div>
-            <div class="talent-name">${highlightMatch(p.name, search)}</div>
-            <div class="talent-role-tag">${p.role}</div>
-            <div style="font-size:0.7rem;color:#666;font-family:'Space Mono',monospace;margin-top:0.2rem">${highlightMatch(p.agencies, search)}</div>
-          </div>
-        </div>
-        <div class="talent-card-bottom">
-          <span class="availability-badge ${p.availability==='available'?'avail-yes':'avail-no'}">${p.availability==='available'?'✓ AVAILABLE':'✗ UNAVAILABLE'}</span>
-          <span class="talent-city">${p.city}</span>
-        </div>
-      </div>`;
+      const bg = colors[p.id.charCodeAt(p.id.length-1) % colors.length];
+      html += cardHTML(p, initials, bg, search);
     });
     html += `</div>`;
   } else {
-    // Grouped by role
     const roleOrder = ['Creative Director, Art','Creative Director, Copy','Art Director','Copywriter','Designer'];
     const grouped = {};
     roleOrder.forEach(r => { grouped[r] = []; });
-    scored.forEach(({ p }) => { (grouped[p.role] = grouped[p.role] || []).push(p); });
-
+    scored.forEach(({ p }) => { (grouped[p.role] = grouped[p.role]||[]).push(p); });
     roleOrder.forEach(r => {
-      const group = grouped[r] || [];
+      const group = grouped[r]||[];
       if (!group.length) return;
       html += `<div class="role-group"><div class="role-label">${r.toUpperCase()}</div><div class="talent-grid">`;
       group.forEach(p => {
         const initials = (p.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase();
-        const bg = colors[p.id.charCodeAt(p.id.length - 1) % colors.length];
-        html += `<div class="talent-card" onclick="openProfile('${p.id}')">
-          <div class="talent-card-top">
-            <div class="talent-avatar" style="background:${bg}">${p.photo ? `<img src="${p.photo}" alt="${p.name}">` : initials}</div>
-            <div><div class="talent-name">${p.name}</div><div class="talent-role-tag">${p.role}</div></div>
-          </div>
-          <div class="talent-card-bottom">
-            <span class="availability-badge ${p.availability==='available'?'avail-yes':'avail-no'}">${p.availability==='available'?'✓ AVAILABLE':'✗ UNAVAILABLE'}</span>
-            <span class="talent-city">${p.city}</span>
-          </div>
-        </div>`;
+        const bg = colors[p.id.charCodeAt(p.id.length-1) % colors.length];
+        html += cardHTML(p, initials, bg, '');
       });
       html += `</div></div>`;
     });
   }
-
   container.innerHTML = html;
+}
+
+function cardHTML(p, initials, bg, search) {
+  return `<div class="talent-card" onclick="openProfile('${p.id}')">
+    <div class="talent-card-top">
+      <div class="talent-avatar" style="background:${bg}">${p.photo?`<img src="${p.photo}" alt="${p.name}">`:initials}</div>
+      <div>
+        <div class="talent-name">${highlightMatch(p.name, search)}</div>
+        <div class="talent-role-tag">${p.role}</div>
+        ${search?`<div style="font-size:0.7rem;color:#666;font-family:'Space Mono',monospace;margin-top:0.2rem">${highlightMatch(p.agencies||'', search)}</div>`:''}
+      </div>
+    </div>
+    <div class="talent-card-bottom">
+      <span class="availability-badge ${p.availability==='available'?'avail-yes':'avail-no'}">${p.availability==='available'?'✓ AVAILABLE':'✗ UNAVAILABLE'}</span>
+      <span class="talent-city">${p.city}</span>
+    </div>
+  </div>`;
+}
+
+function clearFilters() {
+  document.getElementById('filter-search').value = '';
+  document.getElementById('filter-role').value = '';
+  document.getElementById('filter-avail').value = '';
+  document.getElementById('filter-city').value = '';
+  renderCreatives();
 }
 
 // ===== PROFILE =====
@@ -1289,10 +1272,9 @@ function openProfile(id) {
   const p = STATE.profiles.find(x => x.id === id);
   if (!p) return;
   currentProfileId = id;
-
   const initials = (p.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase();
   const colors = ['#FFE500','#FF3CAC','#00E676','#00B4FF','#FF6B35'];
-  const bg = colors[id.charCodeAt(id.length-1) % colors.length];
+  const bg = colors[p.id.charCodeAt(p.id.length-1) % colors.length];
   const datesHtml = p.busyDates && p.busyDates.length
     ? p.busyDates.map(d=>`<span class="cal-date">${d}</span>`).join('')
     : '<span style="font-family:Space Mono,monospace;font-size:0.7rem;color:#888">No booked dates</span>';
@@ -1333,8 +1315,7 @@ function openProfile(id) {
     <div class="profile-edit-bar">
       <span style="font-family:'Space Mono',monospace;font-size:0.8rem;color:#666">Own this profile?</span>
       <button class="btn" style="font-size:0.9rem;padding:0.5rem 1.2rem" onclick="openEditModal('${p.id}')">EDIT / DELETE PROFILE</button>
-    </div>
-  `;
+    </div>`;
   showPage('profile');
 }
 
@@ -1375,7 +1356,7 @@ function openEditFields(p) {
       <div class="form-group"><label>Agencies</label><input id="ef-agencies" value="${p.agencies||''}"></div>
       <div class="form-group"><label>Clients</label><input id="ef-clients" value="${p.clients||''}"></div>
       <div class="form-group"><label>Industries</label><input id="ef-industries" value="${p.industries||''}"></div>
-      <div class="form-group"><label>Booked Dates (comma separated)</label><input id="ef-dates" value="${(p.busyDates||[]).join(', ')}"></div>
+      <div class="form-group"><label>Booked Dates (comma separated)</label><input id="ef-dates" value="${Array.isArray(p.busyDates)?p.busyDates.join(', '):(p.busyDates||'')}"></div>
       <div class="form-group" style="grid-column:1/-1"><label>Bio</label><textarea id="ef-bio">${p.bio||''}</textarea></div>
       <div class="form-group"><label>Photo URL</label><input id="ef-photo" value="${p.photo||''}" placeholder="https://..."></div>
       <div class="form-group"><label>LinkedIn</label><input id="ef-linkedin" value="${p.linkedin||''}"></div>
@@ -1384,68 +1365,88 @@ function openEditFields(p) {
   document.getElementById('edit-fields-modal').classList.add('open');
 }
 
-function saveProfileEdit() {
+async function saveProfileEdit() {
   const idx = STATE.profiles.findIndex(x => x.id === editingProfileId);
   if (idx === -1) return;
-  Object.assign(STATE.profiles[idx], {
-    name:       document.getElementById('ef-name').value,
-    role:       document.getElementById('ef-role').value,
-    city:       document.getElementById('ef-city').value,
+  const updated = Object.assign({}, STATE.profiles[idx], {
+    name:         document.getElementById('ef-name').value,
+    role:         document.getElementById('ef-role').value,
+    city:         document.getElementById('ef-city').value,
     availability: document.getElementById('ef-avail').value,
-    agencies:   document.getElementById('ef-agencies').value,
-    clients:    document.getElementById('ef-clients').value,
-    industries: document.getElementById('ef-industries').value,
-    busyDates:  document.getElementById('ef-dates').value.split(',').map(s=>s.trim()).filter(Boolean),
-    bio:        document.getElementById('ef-bio').value,
-    photo:      document.getElementById('ef-photo').value,
-    linkedin:   document.getElementById('ef-linkedin').value,
-    portfolio:  document.getElementById('ef-portfolio').value,
+    agencies:     document.getElementById('ef-agencies').value,
+    clients:      document.getElementById('ef-clients').value,
+    industries:   document.getElementById('ef-industries').value,
+    busyDates:    document.getElementById('ef-dates').value.split(',').map(s=>s.trim()).filter(Boolean),
+    bio:          document.getElementById('ef-bio').value,
+    photo:        document.getElementById('ef-photo').value,
+    linkedin:     document.getElementById('ef-linkedin').value,
+    portfolio:    document.getElementById('ef-portfolio').value,
   });
-  persist();
-  closeModal('edit-fields-modal');
-  showToast('Profile updated!');
-  openProfile(editingProfileId);
+  showToast('Saving...');
+  const res = await api('updateProfile', { data: updated });
+  if (res && res.ok) {
+    STATE.profiles[idx] = updated;
+    closeModal('edit-fields-modal');
+    showToast('Profile updated!');
+    openProfile(editingProfileId);
+  } else {
+    showToast('Error saving. Try again.');
+  }
 }
 
-function deleteProfile() {
+async function deleteProfile() {
   if (!confirm('Delete this profile permanently?')) return;
-  STATE.profiles = STATE.profiles.filter(x => x.id !== editingProfileId);
-  persist();
-  closeModal('edit-fields-modal');
-  showToast('Profile deleted.');
-  showPage('creatives');
+  showToast('Deleting...');
+  const res = await api('deleteProfile', { id: editingProfileId });
+  if (res && res.ok) {
+    STATE.profiles = STATE.profiles.filter(x => x.id !== editingProfileId);
+    closeModal('edit-fields-modal');
+    showToast('Profile deleted.');
+    showPage('creatives');
+  } else {
+    showToast('Error deleting.');
+  }
 }
 
 // ===== APPLY =====
-function submitApplication(e, source) {
+async function submitApplication(e, source) {
   e.preventDefault();
   const form = e.target;
-  const data = { id: 'pnd_' + Date.now(), availability: 'available', active: false, busyDates: [], photo: '', bio: '' };
+  const data = {};
   new FormData(form).forEach((v, k) => { data[k] = v; });
-  STATE.pending.push(data);
-  persist();
-  form.reset();
-  showToast('Application submitted! Pending admin approval.');
+  const btn = form.querySelector('button[type=submit]');
+  btn.disabled = true;
+  btn.textContent = 'SENDING...';
+  const res = await api('addPending', { data });
+  btn.disabled = false;
+  btn.textContent = 'APPLY →';
+  if (res && res.ok) {
+    form.reset();
+    showToast('Application submitted! Pending admin approval.');
+  } else {
+    showToast('Error submitting. Try again.');
+  }
 }
 
 // ===== ADMIN =====
-function renderAdmin() {
+async function renderAdmin() {
   const container = document.getElementById('admin-list');
+  container.innerHTML = `<div style="text-align:center;padding:3rem;font-family:'Space Mono',monospace;font-size:0.85rem;color:#666">Loading...</div>`;
+  const [profiles, pending] = await Promise.all([api('getProfiles'), api('getPending')]);
+  STATE.profiles = profiles || [];
+  STATE.pending  = pending  || [];
+
   let html = '';
 
-  // ---- PENDING SECTION ----
+  // PENDING
   html += `<div style="margin-bottom:3rem">
     <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;background:var(--orange);display:inline-block;padding:0.2rem 1rem;margin-bottom:1rem;border:3px solid #0a0a0a">PENDING APPROVAL (${STATE.pending.length})</div>`;
-
   if (STATE.pending.length === 0) {
     html += '<p style="font-family:Space Mono,monospace;font-size:0.85rem;color:#666;padding:1rem 0">No pending applications.</p>';
   } else {
     STATE.pending.forEach(p => {
       html += `<div class="admin-card" id="admin-${p.id}">
-        <div class="admin-card-header">
-          <span>${p.name||'No name'} — ${p.role}</span>
-          <span>${p.city||''}</span>
-        </div>
+        <div class="admin-card-header"><span>${p.name||'No name'} — ${p.role}</span><span>${p.city||''}</span></div>
         <div class="admin-card-body" style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem 2rem">
           <p><strong>Experience:</strong> ${p.experience||'—'}</p>
           <p><strong>Visa:</strong> ${p.visa||'—'}</p>
@@ -1465,21 +1466,18 @@ function renderAdmin() {
   }
   html += `</div>`;
 
-  // ---- ACTIVE PROFILES SECTION ----
+  // PROFILES TABLE
   html += `<div>
     <div style="font-family:'Bebas Neue',sans-serif;font-size:2rem;letter-spacing:3px;background:var(--green);display:inline-block;padding:0.2rem 1rem;margin-bottom:1rem;border:3px solid #0a0a0a">PUBLISHED PROFILES (${STATE.profiles.length})</div>
-    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;font-family:'DM Sans',sans-serif">
-      <thead>
-        <tr style="background:var(--black);color:var(--yellow);font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:1px">
-          <th style="padding:0.7rem 1rem;text-align:left;border:2px solid #333">NAME</th>
-          <th style="padding:0.7rem 1rem;text-align:left;border:2px solid #333">ROLE</th>
-          <th style="padding:0.7rem 1rem;text-align:left;border:2px solid #333">CITY</th>
-          <th style="padding:0.7rem 1rem;text-align:left;border:2px solid #333">AVAILABILITY</th>
-          <th style="padding:0.7rem 1rem;text-align:center;border:2px solid #333">VISIBLE</th>
-          <th style="padding:0.7rem 1rem;text-align:center;border:2px solid #333">ACTIONS</th>
-        </tr>
-      </thead>
-      <tbody>`;
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+      <thead><tr style="background:var(--black);color:var(--yellow);font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:1px">
+        <th style="padding:0.7rem 1rem;text-align:left;border:2px solid #333">NAME</th>
+        <th style="padding:0.7rem 1rem;text-align:left;border:2px solid #333">ROLE</th>
+        <th style="padding:0.7rem 1rem;text-align:left;border:2px solid #333">CITY</th>
+        <th style="padding:0.7rem 1rem;text-align:left;border:2px solid #333">AVAILABILITY</th>
+        <th style="padding:0.7rem 1rem;text-align:center;border:2px solid #333">VISIBLE</th>
+        <th style="padding:0.7rem 1rem;text-align:center;border:2px solid #333">ACTIONS</th>
+      </tr></thead><tbody>`;
 
   STATE.profiles.forEach(p => {
     html += `<tr style="border-bottom:2px solid #ddd;background:${p.active?'var(--white)':'#f0ebe0'}">
@@ -1487,14 +1485,14 @@ function renderAdmin() {
       <td style="padding:0.7rem 1rem;border:2px solid #ddd;font-family:'Space Mono',monospace;font-size:0.72rem">${p.role}</td>
       <td style="padding:0.7rem 1rem;border:2px solid #ddd">${p.city}</td>
       <td style="padding:0.7rem 1rem;border:2px solid #ddd">
-        <select onchange="updateAvailability('${p.id}', this.value)" style="border:2px solid #0a0a0a;padding:0.3rem;font-family:'Space Mono',monospace;font-size:0.72rem;background:${p.availability==='available'?'#00E676':'#FF6B35'}">
+        <select onchange="adminUpdateAvailability('${p.id}', this.value)" style="border:2px solid #0a0a0a;padding:0.3rem;font-family:'Space Mono',monospace;font-size:0.72rem;background:${p.availability==='available'?'#00E676':'#FF6B35'}">
           <option value="available" ${p.availability==='available'?'selected':''}>✓ Available</option>
           <option value="unavailable" ${p.availability==='unavailable'?'selected':''}>✗ Unavailable</option>
         </select>
       </td>
       <td style="padding:0.7rem 1rem;border:2px solid #ddd;text-align:center">
         <label style="display:inline-flex;align-items:center;gap:0.4rem;cursor:pointer;font-family:'Space Mono',monospace;font-size:0.72rem">
-          <input type="checkbox" ${p.active?'checked':''} onchange="toggleActive('${p.id}', this.checked)" style="width:18px;height:18px;cursor:pointer">
+          <input type="checkbox" ${p.active?'checked':''} onchange="adminToggleActive('${p.id}', this.checked)" style="width:18px;height:18px;cursor:pointer">
           ${p.active?'ON':'OFF'}
         </label>
       </td>
@@ -1504,43 +1502,41 @@ function renderAdmin() {
       </td>
     </tr>`;
   });
-
   html += `</tbody></table></div>`;
   container.innerHTML = html;
 }
 
-function approveApplication(id) {
-  const idx = STATE.pending.findIndex(x => x.id === id);
-  if (idx === -1) { showToast('Error: not found.'); return; }
-  const app = Object.assign({}, STATE.pending[idx]);
-  app.id = 'p_' + Date.now();
-  app.active = true;
-  app.availability = app.availability || 'available';
-  app.busyDates = app.busyDates || [];
-  app.photo = app.photo || '';
-  app.bio = app.bio || '';
-  STATE.profiles.push(app);
-  STATE.pending.splice(idx, 1);
-  persist();
-  showToast('Profile approved and published!');
-  renderAdmin();
+async function approveApplication(id) {
+  const btn = document.querySelector(`[data-id="${id}"].btn-approve`);
+  if (btn) { btn.disabled = true; btn.textContent = 'Approving...'; }
+  const res = await api('approvePending', { id });
+  if (res && res.ok) {
+    showToast('Profile approved and published!');
+    renderAdmin();
+  } else {
+    showToast('Error approving.');
+    if (btn) { btn.disabled = false; btn.textContent = '✓ APPROVE & PUBLISH'; }
+  }
 }
 
-function rejectApplication(id) {
-  STATE.pending = STATE.pending.filter(x => x.id !== id);
-  persist();
-  showToast('Application rejected.');
-  renderAdmin();
+async function rejectApplication(id) {
+  const res = await api('rejectPending', { id });
+  if (res && res.ok) { showToast('Application rejected.'); renderAdmin(); }
+  else showToast('Error rejecting.');
 }
 
-function toggleActive(id, active) {
+async function adminToggleActive(id, active) {
+  const res = await api('toggleActive', { id, active });
   const p = STATE.profiles.find(x => x.id === id);
-  if (p) { p.active = active; persist(); showToast(active ? 'Profile is now visible.' : 'Profile hidden.'); renderAdmin(); }
+  if (res && res.ok && p) { p.active = active; showToast(active ? 'Profile visible.' : 'Profile hidden.'); }
+  else showToast('Error updating.');
 }
 
-function updateAvailability(id, val) {
+async function adminUpdateAvailability(id, availability) {
+  const res = await api('updateAvailability', { id, availability });
   const p = STATE.profiles.find(x => x.id === id);
-  if (p) { p.availability = val; persist(); showToast('Availability updated.'); }
+  if (res && res.ok && p) { p.availability = availability; showToast('Availability updated.'); }
+  else showToast('Error updating.');
 }
 
 function adminEditProfile(id) {
@@ -1549,12 +1545,14 @@ function adminEditProfile(id) {
   if (p) openEditFields(p);
 }
 
-function adminDeleteProfile(id) {
+async function adminDeleteProfile(id) {
   if (!confirm('Delete this profile permanently?')) return;
-  STATE.profiles = STATE.profiles.filter(x => x.id !== id);
-  persist();
-  showToast('Profile deleted.');
-  renderAdmin();
+  const res = await api('deleteProfile', { id });
+  if (res && res.ok) {
+    STATE.profiles = STATE.profiles.filter(x => x.id !== id);
+    showToast('Profile deleted.');
+    renderAdmin();
+  } else showToast('Error deleting.');
 }
 
 // ===== UTILS =====
@@ -1567,7 +1565,6 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 3500);
 }
 
-// Secret admin: click footer brand 5 times
 let adminClicks = 0;
 document.querySelector('.footer-brand').addEventListener('click', () => {
   if (++adminClicks >= 5) { adminClicks = 0; showPage('admin'); }
@@ -1575,8 +1572,6 @@ document.querySelector('.footer-brand').addEventListener('click', () => {
 
 // ===== BOOT =====
 loadState();
-renderCreatives();
-populateCityFilter();
 </script>
 </body>
 </html>
