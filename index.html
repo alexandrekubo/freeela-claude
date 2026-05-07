@@ -1167,7 +1167,7 @@ function scoreProfile(p, search, roles, avail, city) {
   if (city && !(p.city||'').toLowerCase().includes(city)) return -1;
   if (roles.length > 0 && !roles.includes(p.role)) return -1;
   if (!search) return 1;
-  const words = search.split(/\s+/).filter(Boolean);
+  const words = search.split(' ').filter(Boolean);
   const fields = [p.name, p.role, p.agencies, p.clients, p.industries, p.city, p.bio, p.experience]
     .map(f => (f||'').toLowerCase()).join(' ');
   let score = 0;
@@ -1177,11 +1177,15 @@ function scoreProfile(p, search, roles, avail, city) {
 
 function highlightMatch(text, search) {
   if (!search || !text) return text || '';
-  const words = search.split(/\s+/).filter(Boolean);
-  let result = text;
-  words.forEach(w => {
-    const re = new RegExp('(' + w.replace(/[.*+?^${}()|[\]\]/g, '\$&') + ')', 'gi');
-    result = result.replace(re, '<mark style="background:#FFE500;padding:0 2px">$1</mark>');
+  var words = search.split(' ').filter(Boolean);
+  var result = text;
+  words.forEach(function(w) {
+    var lower = result.toLowerCase();
+    var wLower = w.toLowerCase();
+    var i = lower.indexOf(wLower);
+    if (i >= 0) {
+      result = result.slice(0,i) + '<mark style="background:#FFE500;padding:0 2px">' + result.slice(i, i+w.length) + '</mark>' + result.slice(i+w.length);
+    }
   });
   return result;
 }
