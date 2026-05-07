@@ -769,8 +769,8 @@
 
       <form onsubmit="searchTalent(event)">
         <div class="form-group">
-          <label>Role</label>
-          <select id="search-role" multiple style="height:120px">
+          <label>Role <span style="font-weight:400;opacity:0.6">(hold Ctrl/Cmd for multiple)</span></label>
+          <select id="search-role" multiple style="height:130px">
             <option value="Creative Director, Art">Creative Director, Art</option>
             <option value="Creative Director, Copy">Creative Director, Copy</option>
             <option value="Art Director">Art Director</option>
@@ -779,18 +779,21 @@
           </select>
         </div>
         <div class="form-group">
-          <label>Client</label>
-          <input type="text" id="search-client" placeholder="e.g. Nike, Google, Apple...">
+          <label>Keywords — client, industry, skill, agency...</label>
+          <input type="text" id="search-client" placeholder="e.g. Nike, Tech, Branding, BBDO...">
         </div>
         <div class="form-group">
-          <label>Description of the Project</label>
-          <textarea id="search-desc" placeholder="Tell us about your project..."></textarea>
+          <label>Project description <span style="font-weight:400;opacity:0.6">(optional)</span></label>
+          <textarea id="search-desc" placeholder="e.g. We need a CD for a global campaign for a sneaker brand..." style="min-height:70px"></textarea>
         </div>
         <div class="form-group">
-          <label>City / Remote</label>
-          <input type="text" id="search-city" placeholder="e.g. New York or Remote">
+          <label>City / State / Remote</label>
+          <input type="text" id="search-city" placeholder="e.g. New York, LA, Chicago or Remote">
         </div>
-        <button type="submit" class="btn btn-full">SEARCH →</button>
+        <div style="background:#0a0a0a;color:#f5f0e8;padding:0.8rem 1rem;font-family:'Space Mono',monospace;font-size:0.72rem;margin-bottom:1rem;border:3px solid #0a0a0a">
+          💡 The more you fill in, the better the matches. Keywords are searched across names, agencies, clients, industries and bios.
+        </div>
+        <button type="submit" class="btn btn-full">SEARCH TALENT →</button>
       </form>
     </div>
 
@@ -1123,63 +1126,124 @@ function showPage(page) {
 }
 
 // ===== SEARCH =====
+// ===== SEARCH STATE (shared between home form and creatives filters) =====
+let SEARCH = { terms: '', roles: [], avail: '', city: '' };
+
 function searchTalent(e) {
   e.preventDefault();
-  const roles = Array.from(document.getElementById('search-role').selectedOptions).map(o => o.value);
-  const city = document.getElementById('search-city').value.toLowerCase();
-  if (roles.length > 0) document.getElementById('filter-role').value = roles[0];
-  if (city) document.getElementById('filter-search').value = city;
+  const roles   = Array.from(document.getElementById('search-role').selectedOptions).map(o => o.value);
+  const client  = document.getElementById('search-client').value.trim();
+  const desc    = document.getElementById('search-desc').value.trim();
+  const city    = document.getElementById('search-city').value.trim();
+  // Build combined search terms from client + description
+  const terms = [client, desc].filter(Boolean).join(' ');
+  SEARCH = { terms: terms.toLowerCase(), roles, avail: '', city: city.toLowerCase() };
   showPage('creatives');
+  // Apply to filter bar UI after page switch
+  setTimeout(() => {
+    document.getElementById('filter-search').value = terms;
+    if (roles.length === 1) document.getElementById('filter-role').value = roles[0];
+    renderCreatives();
+    populateCityFilter();
+  }, 0);
 }
 
 function populateCityFilter() {
-  const cities = [...new Set(STATE.profiles.filter(p=>p.active).map(p => p.city))].sort();
+  const cities = [...new Set(STATE.profiles.filter(p => p.active).map(p => p.city))].sort();
   const sel = document.getElementById('filter-city');
   const current = sel.value;
-  sel.innerHTML = '<option value="">All Cities</option>' + cities.map(c => `<option value="${c}"${c===current?' selected':''}>${c}</option>`).join('');
+  sel.innerHTML = '<option value="">All Cities</option>' + cities.map(c =>
+    `<option value="${c}"${c === current ? ' selected' : ''}>${c}</option>`
+  ).join('');
+}
+
+function scoreProfile(p, search, roles, avail, city) {
+  // Hard filters first
+  if (!p.active) return -1;
+  if (avail && p.availability !== avail) return -1;
+  if (city && !(p.city||'').toLowerCase().includes(city)) return -1;
+  if (roles.length > 0 && !roles.includes(p.role)) return -1;
+
+  // If no search terms, everyone passes with score 1
+  if (!search) return 1;
+
+  // Score by how many fields match the search terms
+  const words = search.split(/\s+/).filter(Boolean);
+  const fields = [
+    (p.name       ||'').toLowerCase(),
+    (p.role       ||'').toLowerCase(),
+    (p.agencies   ||'').toLowerCase(),
+    (p.clients    ||'').toLowerCase(),
+    (p.industries ||'').toLowerCase(),
+    (p.city       ||'').toLowerCase(),
+    (p.bio        ||'').toLowerCase(),
+    (p.experience ||'').toLowerCase(),
+  ].join(' ');
+
+  let score = 0;
+  words.forEach(w => { if (fields.includes(w)) score++; });
+  return score; // 0 = no match, positive = match
+}
+
+function highlightMatch(text, search) {
+  if (!search || !text) return text || '';
+  const words = search.split(/\s+/).filter(Boolean);
+  let result = text;
+  words.forEach(w => {
+    const re = new RegExp('(' + w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+    result = result.replace(re, '<mark style="background:#FFE500;padding:0 2px">$1</mark>');
+  });
+  return result;
 }
 
 function renderCreatives() {
-  const search = document.getElementById('filter-search').value.toLowerCase();
+  const search = document.getElementById('filter-search').value.toLowerCase().trim();
   const role   = document.getElementById('filter-role').value;
   const avail  = document.getElementById('filter-avail').value;
-  const city   = document.getElementById('filter-city').value;
+  const city   = document.getElementById('filter-city').value.toLowerCase();
 
-  let filtered = STATE.profiles.filter(p => {
-    if (!p.active) return false;
-    const matchSearch = !search ||
-      (p.name||'').toLowerCase().includes(search) ||
-      (p.agencies||'').toLowerCase().includes(search) ||
-      (p.clients||'').toLowerCase().includes(search) ||
-      (p.city||'').toLowerCase().includes(search);
-    const matchRole  = !role  || p.role === role;
-    const matchAvail = !avail || p.availability === avail;
-    const matchCity  = !city  || p.city === city;
-    return matchSearch && matchRole && matchAvail && matchCity;
-  });
+  const roles = role ? [role] : [];
 
-  const roleOrder = ['Creative Director, Art','Creative Director, Copy','Art Director','Copywriter','Designer'];
-  const grouped = {};
-  roleOrder.forEach(r => { grouped[r] = []; });
-  filtered.forEach(p => { (grouped[p.role] = grouped[p.role]||[]).push(p); });
+  // Score every profile
+  const scored = STATE.profiles
+    .map(p => ({ p, score: scoreProfile(p, search, roles, avail, city) }))
+    .filter(x => x.score > 0)
+    .sort((a, b) => b.score - a.score);
 
   const container = document.getElementById('talent-list');
-  let html = '';
-  let hasAny = false;
-  const colors = ['#FFE500','#FF3CAC','#00E676','#00B4FF','#FF6B35'];
 
-  roleOrder.forEach(r => {
-    const group = grouped[r]||[];
-    if (!group.length) return;
-    hasAny = true;
-    html += `<div class="role-group"><div class="role-label">${r.toUpperCase()}</div><div class="talent-grid">`;
-    group.forEach(p => {
+  // Show result count
+  const countBadge = scored.length > 0
+    ? `<div style="font-family:'Space Mono',monospace;font-size:0.78rem;color:#555;margin-bottom:1.5rem;padding:0.5rem 0;border-bottom:2px solid #0a0a0a">
+        ${search || role || avail || city
+          ? `<span style="background:#0a0a0a;color:#FFE500;padding:0.2rem 0.7rem;font-weight:700">${scored.length} result${scored.length!==1?'s':''}</span> matching your search`
+          : `<span style="background:#0a0a0a;color:#FFE500;padding:0.2rem 0.7rem;font-weight:700">${scored.length}</span> creatives available`}
+       </div>`
+    : '';
+
+  if (scored.length === 0) {
+    container.innerHTML = `<div class="no-results">NO CREATIVES FOUND<br><span style="font-size:1rem;font-family:'Space Mono',monospace;color:#aaa;letter-spacing:1px">Try different keywords or clear filters</span></div>`;
+    return;
+  }
+
+  // If searching, show flat ranked list; if browsing, group by role
+  const colors = ['#FFE500','#FF3CAC','#00E676','#00B4FF','#FF6B35'];
+  let html = countBadge;
+
+  if (search) {
+    // Flat ranked list
+    html += `<div class="talent-grid">`;
+    scored.forEach(({ p }) => {
       const initials = (p.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase();
-      const bg = colors[p.id.charCodeAt(p.id.length-1) % colors.length];
+      const bg = colors[p.id.charCodeAt(p.id.length - 1) % colors.length];
       html += `<div class="talent-card" onclick="openProfile('${p.id}')">
         <div class="talent-card-top">
-          <div class="talent-avatar" style="background:${bg}">${p.photo?`<img src="${p.photo}" alt="${p.name}">`:initials}</div>
-          <div><div class="talent-name">${p.name}</div><div class="talent-role-tag">${p.role}</div></div>
+          <div class="talent-avatar" style="background:${bg}">${p.photo ? `<img src="${p.photo}" alt="${p.name}">` : initials}</div>
+          <div>
+            <div class="talent-name">${highlightMatch(p.name, search)}</div>
+            <div class="talent-role-tag">${p.role}</div>
+            <div style="font-size:0.7rem;color:#666;font-family:'Space Mono',monospace;margin-top:0.2rem">${highlightMatch(p.agencies, search)}</div>
+          </div>
         </div>
         <div class="talent-card-bottom">
           <span class="availability-badge ${p.availability==='available'?'avail-yes':'avail-no'}">${p.availability==='available'?'✓ AVAILABLE':'✗ UNAVAILABLE'}</span>
@@ -1187,10 +1251,37 @@ function renderCreatives() {
         </div>
       </div>`;
     });
-    html += `</div></div>`;
-  });
+    html += `</div>`;
+  } else {
+    // Grouped by role
+    const roleOrder = ['Creative Director, Art','Creative Director, Copy','Art Director','Copywriter','Designer'];
+    const grouped = {};
+    roleOrder.forEach(r => { grouped[r] = []; });
+    scored.forEach(({ p }) => { (grouped[p.role] = grouped[p.role] || []).push(p); });
 
-  container.innerHTML = hasAny ? html : '<div class="no-results">NO CREATIVES FOUND</div>';
+    roleOrder.forEach(r => {
+      const group = grouped[r] || [];
+      if (!group.length) return;
+      html += `<div class="role-group"><div class="role-label">${r.toUpperCase()}</div><div class="talent-grid">`;
+      group.forEach(p => {
+        const initials = (p.name||'?').split(' ').map(n=>n[0]).join('').toUpperCase();
+        const bg = colors[p.id.charCodeAt(p.id.length - 1) % colors.length];
+        html += `<div class="talent-card" onclick="openProfile('${p.id}')">
+          <div class="talent-card-top">
+            <div class="talent-avatar" style="background:${bg}">${p.photo ? `<img src="${p.photo}" alt="${p.name}">` : initials}</div>
+            <div><div class="talent-name">${p.name}</div><div class="talent-role-tag">${p.role}</div></div>
+          </div>
+          <div class="talent-card-bottom">
+            <span class="availability-badge ${p.availability==='available'?'avail-yes':'avail-no'}">${p.availability==='available'?'✓ AVAILABLE':'✗ UNAVAILABLE'}</span>
+            <span class="talent-city">${p.city}</span>
+          </div>
+        </div>`;
+      });
+      html += `</div></div>`;
+    });
+  }
+
+  container.innerHTML = html;
 }
 
 // ===== PROFILE =====
