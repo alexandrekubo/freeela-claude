@@ -1,0 +1,1508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⬛ FREEELA</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Bebas+Neue&family=DM+Sans:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --white: #f5f0e8;
+    --yellow: #FFE500;
+    --pink: #FF3CAC;
+    --green: #00E676;
+    --blue: #00B4FF;
+    --orange: #FF6B35;
+    --border: 3px solid var(--black);
+    --border-thick: 5px solid var(--black);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    color: var(--black);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV */
+  nav {
+    background: var(--yellow);
+    border-bottom: var(--border-thick);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.2rem;
+    letter-spacing: 3px;
+    color: var(--black);
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 0;
+  }
+
+  .nav-link {
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--black);
+    text-decoration: none;
+    padding: 0 1.5rem;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    border-left: var(--border);
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+
+  .nav-link:hover, .nav-link.active {
+    background: var(--black);
+    color: var(--yellow);
+  }
+
+  /* FOOTER */
+  footer {
+    background: var(--black);
+    color: var(--white);
+    border-top: var(--border-thick);
+    padding: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: auto;
+  }
+
+  .footer-brand {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 3px;
+    color: var(--yellow);
+    margin-bottom: 0.4rem;
+  }
+
+  .footer-sub {
+    font-size: 0.78rem;
+    color: #aaa;
+    max-width: 360px;
+    line-height: 1.5;
+  }
+
+  .footer-email {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--yellow);
+    text-decoration: none;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    border: 2px solid var(--yellow);
+    padding: 0.5rem 1rem;
+    transition: all 0.15s;
+  }
+
+  .footer-email:hover { background: var(--yellow); color: var(--black); }
+
+  /* PAGES */
+  .page { display: none; flex: 1; }
+  .page.active { display: block; }
+
+  /* ===== HOME PAGE ===== */
+  .hero {
+    background: var(--black);
+    padding: 4rem 3rem;
+    border-bottom: var(--border-thick);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    background: var(--pink);
+    border-radius: 50%;
+    opacity: 0.3;
+  }
+
+  .hero::after {
+    content: '';
+    position: absolute;
+    bottom: -40px; left: 30%;
+    width: 200px; height: 200px;
+    background: var(--yellow);
+    clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+    opacity: 0.2;
+  }
+
+  .hero-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(5rem, 12vw, 10rem);
+    color: var(--yellow);
+    letter-spacing: 8px;
+    line-height: 1;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-desc {
+    max-width: 700px;
+    color: var(--white);
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-top: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-desc span {
+    background: var(--yellow);
+    color: var(--black);
+    padding: 0 3px;
+    font-weight: 700;
+  }
+
+  /* DUAL PANELS */
+  .dual-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .panel {
+    border-right: var(--border-thick);
+    padding: 3rem;
+  }
+
+  .panel:last-child { border-right: none; }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+    border-bottom: var(--border);
+    padding-bottom: 1.5rem;
+  }
+
+  .panel-illus {
+    width: 90px;
+    height: 90px;
+    flex-shrink: 0;
+  }
+
+  .panel-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.5rem;
+    letter-spacing: 3px;
+  }
+
+  .panel-subtitle {
+    font-size: 0.85rem;
+    color: #555;
+    font-family: 'Space Mono', monospace;
+    margin-top: 0.2rem;
+  }
+
+  .panel.recruiter { background: var(--blue); }
+  .panel.creative { background: var(--green); }
+
+  /* FORMS */
+  .form-group { margin-bottom: 1.2rem; }
+
+  label {
+    display: block;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  input, select, textarea {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: var(--border);
+    background: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    outline: none;
+    transition: box-shadow 0.1s;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    box-shadow: 4px 4px 0 var(--black);
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  .btn {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    background: var(--black);
+    color: var(--yellow);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 3px;
+    border: var(--border);
+    cursor: pointer;
+    transition: all 0.1s;
+    text-decoration: none;
+  }
+
+  .btn:hover {
+    background: var(--yellow);
+    color: var(--black);
+    box-shadow: 5px 5px 0 var(--black);
+    transform: translate(-2px,-2px);
+  }
+
+  .btn-pink { background: var(--pink); color: var(--white); }
+  .btn-pink:hover { background: var(--black); color: var(--pink); }
+
+  .btn-full { width: 100%; text-align: center; }
+
+  /* ===== CREATIVES PAGE ===== */
+  .page-header {
+    background: var(--pink);
+    border-bottom: var(--border-thick);
+    padding: 2.5rem 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .page-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 4rem;
+    letter-spacing: 5px;
+  }
+
+  /* FILTER BAR */
+  .filter-bar {
+    background: var(--white);
+    border-bottom: var(--border-thick);
+    padding: 1.2rem 3rem;
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .filter-bar input, .filter-bar select {
+    border: var(--border);
+    padding: 0.5rem 0.8rem;
+    font-size: 0.85rem;
+    width: auto;
+  }
+
+  .filter-bar .search-input { flex: 1; min-width: 200px; }
+
+  /* TALENT TABLE */
+  .talent-section { padding: 2rem 3rem; }
+
+  .role-group { margin-bottom: 3rem; }
+
+  .role-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.6rem;
+    letter-spacing: 3px;
+    background: var(--black);
+    color: var(--yellow);
+    display: inline-block;
+    padding: 0.2rem 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .talent-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+
+  .talent-card {
+    border: var(--border);
+    background: var(--white);
+    cursor: pointer;
+    transition: all 0.1s;
+    overflow: hidden;
+  }
+
+  .talent-card:hover {
+    box-shadow: 6px 6px 0 var(--black);
+    transform: translate(-3px,-3px);
+  }
+
+  .talent-card-top {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border-bottom: var(--border);
+  }
+
+  .talent-avatar {
+    width: 60px; height: 60px;
+    border: var(--border);
+    border-radius: 50%;
+    object-fit: cover;
+    background: #ddd;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-family: 'Bebas Neue', sans-serif;
+    overflow: hidden;
+  }
+
+  .talent-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+  .talent-name {
+    font-weight: 900;
+    font-size: 1rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+
+  .talent-role-tag {
+    font-size: 0.75rem;
+    color: #555;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .talent-card-bottom {
+    padding: 0.7rem 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f0ebe0;
+  }
+
+  .availability-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 0.2rem 0.7rem;
+    border: 2px solid var(--black);
+  }
+
+  .avail-yes { background: var(--green); }
+  .avail-no { background: var(--orange); }
+
+  .talent-city {
+    font-size: 0.78rem;
+    color: #666;
+    font-family: 'Space Mono', monospace;
+  }
+
+  /* TALENT PROFILE */
+  .profile-back {
+    padding: 1.5rem 3rem;
+    border-bottom: var(--border);
+    background: var(--yellow);
+  }
+
+  .profile-back a {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--black);
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .profile-back a:hover { text-decoration: underline; }
+
+  .profile-hero {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    border-bottom: var(--border-thick);
+  }
+
+  .profile-avatar-large {
+    width: 200px;
+    height: 200px;
+    border-right: var(--border-thick);
+    object-fit: cover;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    background: var(--blue);
+    overflow: hidden;
+  }
+
+  .profile-avatar-large img { width: 100%; height: 100%; object-fit: cover; }
+
+  .profile-info { padding: 2rem 3rem; }
+
+  .profile-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3rem;
+    letter-spacing: 3px;
+  }
+
+  .profile-role {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 0.3rem;
+  }
+
+  .profile-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .tag {
+    border: 2px solid var(--black);
+    padding: 0.2rem 0.7rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    background: var(--yellow);
+  }
+
+  .profile-body {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-bottom: var(--border-thick);
+  }
+
+  .profile-col {
+    padding: 2rem 3rem;
+    border-right: var(--border);
+  }
+
+  .profile-col:last-child { border-right: none; }
+
+  .profile-section-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border-bottom: var(--border);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .avail-calendar {
+    margin-top: 1rem;
+    border: var(--border);
+    padding: 1rem;
+    background: #f9f5ed;
+  }
+
+  .cal-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 0.7rem;
+    margin-bottom: 0.5rem;
+    color: #555;
+  }
+
+  .cal-dates { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  .cal-date {
+    background: var(--orange);
+    color: var(--white);
+    font-family: 'Space Mono', monospace;
+    font-size: 0.65rem;
+    padding: 0.2rem 0.5rem;
+    border: 1px solid var(--black);
+  }
+
+  .profile-edit-bar {
+    padding: 2rem 3rem;
+    background: #f0ebe0;
+    border-bottom: var(--border-thick);
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  /* APPLY FORM */
+  .apply-section {
+    background: var(--black);
+    padding: 3rem;
+    border-top: var(--border-thick);
+  }
+
+  .apply-section .form-label-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--yellow);
+    letter-spacing: 3px;
+    margin-bottom: 0.5rem;
+  }
+
+  .apply-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1.5rem;
+  }
+
+  .apply-section label { color: var(--white); }
+  .apply-section input, .apply-section select, .apply-section textarea {
+    background: #1a1a1a;
+    color: var(--white);
+    border-color: #444;
+  }
+
+  /* ABOUT */
+  .about-hero {
+    background: var(--green);
+    border-bottom: var(--border-thick);
+    padding: 4rem 3rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3rem;
+    align-items: center;
+  }
+
+  .about-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 5rem;
+    letter-spacing: 5px;
+    line-height: 1;
+  }
+
+  .about-body { padding: 3rem; max-width: 800px; }
+
+  .about-body p {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+
+  .about-links {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+  }
+
+  .about-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    border: var(--border-thick);
+    padding: 0.7rem 1.5rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--black);
+    transition: all 0.1s;
+  }
+
+  .about-link:hover {
+    background: var(--black);
+    color: var(--yellow);
+    box-shadow: 5px 5px 0 var(--black);
+    transform: translate(-2px,-2px);
+  }
+
+  .about-link.email-btn { background: var(--yellow); }
+  .about-link.linkedin-btn { background: var(--blue); }
+  .about-link.ig-btn { background: var(--pink); color: var(--white); }
+  .about-link.ig-btn:hover { color: var(--pink); }
+
+  /* ADMIN PAGE */
+  .admin-section { padding: 3rem; }
+
+  .admin-card {
+    border: var(--border-thick);
+    margin-bottom: 1.5rem;
+    background: var(--white);
+  }
+
+  .admin-card-header {
+    background: var(--yellow);
+    padding: 1rem 1.5rem;
+    border-bottom: var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Space Mono', monospace;
+    font-weight: 700;
+  }
+
+  .admin-card-body { padding: 1.5rem; }
+
+  .admin-actions { display: flex; gap: 0.8rem; }
+
+  .btn-approve { background: var(--green); color: var(--black); }
+  .btn-approve:hover { background: var(--black); color: var(--green); }
+  .btn-reject { background: var(--orange); color: var(--white); }
+  .btn-reject:hover { background: var(--black); color: var(--orange); }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--white);
+    border: var(--border-thick);
+    padding: 2rem;
+    max-width: 480px;
+    width: 90%;
+    box-shadow: 10px 10px 0 var(--black);
+  }
+
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 2px;
+    margin-bottom: 1rem;
+  }
+
+  .modal-actions { display: flex; gap: 1rem; margin-top: 1.5rem; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: var(--black);
+    color: var(--yellow);
+    padding: 1rem 2rem;
+    font-family: 'Space Mono', monospace;
+    font-size: 0.85rem;
+    border: var(--border);
+    z-index: 300;
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  /* SVG illustrations */
+  .illus-svg { width: 100%; height: 100%; }
+
+  /* no-results */
+  .no-results {
+    text-align: center;
+    padding: 4rem;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: #aaa;
+    letter-spacing: 3px;
+  }
+
+  @media (max-width: 768px) {
+    .dual-panels { grid-template-columns: 1fr; }
+    .panel { border-right: none; border-bottom: var(--border-thick); }
+    .profile-hero { grid-template-columns: 1fr; }
+    .profile-avatar-large { width: 100%; height: 160px; border-right: none; border-bottom: var(--border-thick); }
+    .profile-body { grid-template-columns: 1fr; }
+    .about-hero { grid-template-columns: 1fr; }
+    .apply-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" onclick="showPage('home')">FREEELA</a>
+  <div class="nav-links">
+    <a class="nav-link active" id="nav-home" onclick="showPage('home')">HOME</a>
+    <a class="nav-link" id="nav-creatives" onclick="showPage('creatives')">CREATIVES</a>
+    <a class="nav-link" id="nav-about" onclick="showPage('about')">ABOUT</a>
+  </div>
+</nav>
+
+<!-- ===== HOME PAGE ===== -->
+<div class="page active" id="page-home">
+  <div class="hero">
+    <div class="hero-logo">FREEELA</div>
+    <p class="hero-desc">
+      Here you'll find top creative talent — <span>CDs, ADs, CWs, and Designers</span> — available for freelance work across the U.S.<br><br>
+      Everyone in this group is <span>US-based</span>, authorized to work in the country, and brings <span>10+ years of experience</span> from leading independent agencies and global networks such as Publicis, WPP, and Omnicom.
+    </p>
+  </div>
+
+  <div class="dual-panels">
+    <!-- RECRUITER PANEL -->
+    <div class="panel recruiter">
+      <div class="panel-header">
+        <svg class="panel-illus" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Body -->
+          <rect x="25" y="50" width="40" height="35" rx="4" fill="#0a0a0a"/>
+          <!-- Head -->
+          <circle cx="45" cy="35" r="18" fill="#f5d5b0"/>
+          <circle cx="45" cy="35" r="18" fill="#f5d5b0" stroke="#0a0a0a" stroke-width="2.5"/>
+          <!-- Big hair -->
+          <path d="M20 28 Q18 10 45 8 Q72 10 70 28 Q68 15 45 14 Q22 15 20 28Z" fill="#0a0a0a"/>
+          <path d="M19 26 Q15 18 20 14 Q18 22 22 26Z" fill="#0a0a0a"/>
+          <path d="M71 26 Q75 18 70 14 Q72 22 68 26Z" fill="#0a0a0a"/>
+          <path d="M22 26 Q20 16 30 11 Q22 18 24 26Z" fill="#0a0a0a"/>
+          <!-- Eyes -->
+          <circle cx="39" cy="33" r="2.5" fill="#0a0a0a"/>
+          <circle cx="51" cy="33" r="2.5" fill="#0a0a0a"/>
+          <!-- Smile -->
+          <path d="M39 40 Q45 45 51 40" stroke="#0a0a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <!-- Tie -->
+          <path d="M42 53 L45 58 L48 53 L46 49 L44 49Z" fill="#FFE500"/>
+        </svg>
+        <div>
+          <div class="panel-title">RECRUITER</div>
+          <div class="panel-subtitle">// Find your next creative hire</div>
+        </div>
+      </div>
+
+      <form onsubmit="searchTalent(event)">
+        <div class="form-group">
+          <label>Role</label>
+          <select id="search-role" multiple style="height:120px">
+            <option value="Creative Director, Art">Creative Director, Art</option>
+            <option value="Creative Director, Copy">Creative Director, Copy</option>
+            <option value="Art Director">Art Director</option>
+            <option value="Copywriter">Copywriter</option>
+            <option value="Designer">Designer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Client</label>
+          <input type="text" id="search-client" placeholder="e.g. Nike, Google, Apple...">
+        </div>
+        <div class="form-group">
+          <label>Description of the Project</label>
+          <textarea id="search-desc" placeholder="Tell us about your project..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>City / Remote</label>
+          <input type="text" id="search-city" placeholder="e.g. New York or Remote">
+        </div>
+        <button type="submit" class="btn btn-full">SEARCH →</button>
+      </form>
+    </div>
+
+    <!-- CREATIVE PANEL -->
+    <div class="panel creative">
+      <div class="panel-header">
+        <svg class="panel-illus" viewBox="0 0 90 90" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Body -->
+          <rect x="25" y="50" width="40" height="35" rx="4" fill="#0a0a0a"/>
+          <!-- Shirt pocket / detail -->
+          <rect x="42" y="54" width="12" height="8" rx="1" fill="#00E676"/>
+          <!-- Head -->
+          <circle cx="45" cy="33" r="17" fill="#f5d5b0" stroke="#0a0a0a" stroke-width="2.5"/>
+          <!-- Short hair -->
+          <path d="M28 29 Q28 14 45 12 Q62 14 62 29 Q60 20 45 18 Q30 20 28 29Z" fill="#222"/>
+          <!-- Glasses -->
+          <rect x="34" y="30" width="10" height="7" rx="2" fill="none" stroke="#0a0a0a" stroke-width="2"/>
+          <rect x="46" y="30" width="10" height="7" rx="2" fill="none" stroke="#0a0a0a" stroke-width="2"/>
+          <line x1="44" y1="33.5" x2="46" y2="33.5" stroke="#0a0a0a" stroke-width="2"/>
+          <line x1="32" y1="33.5" x2="34" y2="33.5" stroke="#0a0a0a" stroke-width="2"/>
+          <line x1="56" y1="33.5" x2="58" y2="33.5" stroke="#0a0a0a" stroke-width="2"/>
+          <!-- Eyes inside glasses -->
+          <circle cx="39" cy="33.5" r="1.5" fill="#0a0a0a"/>
+          <circle cx="51" cy="33.5" r="1.5" fill="#0a0a0a"/>
+          <!-- Smile -->
+          <path d="M40 40 Q45 44 50 40" stroke="#0a0a0a" stroke-width="2" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div>
+          <div class="panel-title">CREATIVE</div>
+          <div class="panel-subtitle">// Join the talent roster</div>
+        </div>
+      </div>
+
+      <p style="font-family:'Space Mono',monospace; font-size:0.85rem; margin-bottom:1.5rem; font-weight:700;">Want to be showcased here? Apply now!</p>
+
+      <form onsubmit="submitApplication(event, 'home')">
+        <div class="form-group">
+          <label>Role</label>
+          <select name="role" required>
+            <option value="">Select...</option>
+            <option>Creative Director, Art</option>
+            <option>Creative Director, Copy</option>
+            <option>Art Director</option>
+            <option>Copywriter</option>
+            <option>Designer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Years of Experience</label>
+          <input type="text" name="experience" placeholder="e.g. 12 years" required>
+        </div>
+        <div class="form-group">
+          <label>Previous Agencies</label>
+          <input type="text" name="agencies" placeholder="e.g. BBDO, Ogilvy, Droga5" required>
+        </div>
+        <div class="form-group">
+          <label>Main Clients</label>
+          <input type="text" name="clients" placeholder="e.g. Nike, Coca-Cola, Apple" required>
+        </div>
+        <div class="form-group">
+          <label>Industries You Have Most Experience With</label>
+          <input type="text" name="industries" placeholder="e.g. Tech, Fashion, CPG" required>
+        </div>
+        <div class="form-group">
+          <label>Visa Status</label>
+          <select name="visa" required>
+            <option value="">Select...</option>
+            <option>US Citizen</option>
+            <option>Green Card</option>
+            <option>H-1B</option>
+            <option>O-1</option>
+            <option>Other Work Authorization</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" name="city" placeholder="e.g. New York, NY" required>
+        </div>
+        <div class="form-group">
+          <label>LinkedIn Profile</label>
+          <input type="url" name="linkedin" placeholder="https://linkedin.com/in/..." required>
+        </div>
+        <div class="form-group">
+          <label>Portfolio</label>
+          <input type="url" name="portfolio" placeholder="https://yourportfolio.com">
+        </div>
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" name="email" placeholder="your@email.com" required>
+        </div>
+        <button type="submit" class="btn btn-pink btn-full">APPLY →</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CREATIVES PAGE ===== -->
+<div class="page" id="page-creatives">
+  <div class="page-header">
+    <div class="page-title">CREATIVES</div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.8rem;">Top US-based freelance talent</div>
+  </div>
+
+  <div class="filter-bar">
+    <input type="text" class="search-input" id="filter-search" placeholder="🔍  Search by name, agency, client..." oninput="renderCreatives()">
+    <select id="filter-role" onchange="renderCreatives()">
+      <option value="">All Roles</option>
+      <option>Creative Director, Art</option>
+      <option>Creative Director, Copy</option>
+      <option>Art Director</option>
+      <option>Copywriter</option>
+      <option>Designer</option>
+    </select>
+    <select id="filter-avail" onchange="renderCreatives()">
+      <option value="">All Availability</option>
+      <option value="available">Available</option>
+      <option value="unavailable">Unavailable</option>
+    </select>
+    <select id="filter-city" onchange="renderCreatives()">
+      <option value="">All Cities</option>
+    </select>
+  </div>
+
+  <div class="talent-section" id="talent-list"></div>
+
+  <!-- Apply section at bottom -->
+  <div class="apply-section">
+    <div class="form-label-title">WANT TO BE SHOWCASED HERE?</div>
+    <p style="color:#aaa;font-family:'Space Mono',monospace;font-size:0.8rem;margin-bottom:1.5rem;">Apply now and join the roster.</p>
+    <form onsubmit="submitApplication(event, 'creatives')">
+      <div class="apply-grid">
+        <div class="form-group">
+          <label>Role</label>
+          <select name="role" required>
+            <option value="">Select...</option>
+            <option>Creative Director, Art</option>
+            <option>Creative Director, Copy</option>
+            <option>Art Director</option>
+            <option>Copywriter</option>
+            <option>Designer</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Years of Experience</label>
+          <input type="text" name="experience" placeholder="e.g. 12 years" required>
+        </div>
+        <div class="form-group">
+          <label>Previous Agencies</label>
+          <input type="text" name="agencies" placeholder="e.g. BBDO, Ogilvy" required>
+        </div>
+        <div class="form-group">
+          <label>Main Clients</label>
+          <input type="text" name="clients" placeholder="e.g. Nike, Coca-Cola" required>
+        </div>
+        <div class="form-group">
+          <label>Industries</label>
+          <input type="text" name="industries" placeholder="e.g. Tech, Fashion" required>
+        </div>
+        <div class="form-group">
+          <label>Visa Status</label>
+          <select name="visa" required>
+            <option value="">Select...</option>
+            <option>US Citizen</option>
+            <option>Green Card</option>
+            <option>H-1B</option>
+            <option>O-1</option>
+            <option>Other Work Authorization</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" name="city" placeholder="e.g. New York, NY" required>
+        </div>
+        <div class="form-group">
+          <label>LinkedIn Profile</label>
+          <input type="url" name="linkedin" placeholder="https://linkedin.com/in/..." required>
+        </div>
+        <div class="form-group">
+          <label>Portfolio</label>
+          <input type="url" name="portfolio" placeholder="https://yourportfolio.com">
+        </div>
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" name="email" placeholder="your@email.com" required>
+        </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label>Full Name</label>
+          <input type="text" name="name" placeholder="Your full name" required>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-pink">APPLY →</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== PROFILE PAGE ===== -->
+<div class="page" id="page-profile">
+  <div id="profile-content"></div>
+</div>
+
+<!-- ===== ABOUT PAGE ===== -->
+<div class="page" id="page-about">
+  <div class="about-hero">
+    <div>
+      <div class="about-title">ABOUT<br>FREE<br>ELA</div>
+    </div>
+    <div>
+      <p style="font-family:'Space Mono',monospace;font-size:1rem;line-height:1.8;">
+        A community platform built for creative freelancers and the agencies that need them — built by one of their own.
+      </p>
+    </div>
+  </div>
+
+  <div class="about-body">
+    <p>
+      This page was created by <a href="https://www.kazuokubo.com" target="_blank" style="color:var(--black);font-weight:900;border-bottom:3px solid var(--black);">Alexandre Kazuo Kubo</a>, Creative Director and Art Director, with the goal of helping the freelance community and top creative talent during these difficult times of mass layoffs.
+    </p>
+    <p>
+      The idea is to make it easier for recruiters to find top-tier talent that meets all the requirements needed to work on major projects for leading agencies and global brands.
+    </p>
+    <p>
+      This page is not for profit — although hopefully it helps generate plenty of profit for clients and freelancers alike, of course.
+    </p>
+    <p style="font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:3px;">Keep in touch!</p>
+
+    <div class="about-links">
+      <a href="mailto:alexandrekubo@gmail.com" class="about-link email-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+        EMAIL
+      </a>
+      <a href="https://www.linkedin.com/in/alexandre-kazuo-kubo-33189177/" target="_blank" class="about-link linkedin-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/><circle cx="4" cy="4" r="2"/></svg>
+        LINKEDIN
+      </a>
+      <a href="https://www.instagram.com/kazuodesigns/" target="_blank" class="about-link ig-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+        INSTAGRAM
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ===== ADMIN PAGE ===== -->
+<div class="page" id="page-admin">
+  <div class="page-header" style="background:var(--orange)">
+    <div class="page-title">ADMIN — PENDING APPROVALS</div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.8rem;">🔒 Hidden page</div>
+  </div>
+  <div class="admin-section" id="admin-list"></div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-brand">FREEELA</div>
+    <div class="footer-sub">Connecting top-tier US-based creative talent with forward-thinking recruiters and agencies.</div>
+  </div>
+  <a href="mailto:alexandrekubo@gmail.com" class="footer-email">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
+    alexandrekubo@gmail.com
+  </a>
+</footer>
+
+<!-- MODAL: Edit/Delete Profile -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">EDIT PROFILE</div>
+    <p style="font-family:'Space Mono',monospace;font-size:0.8rem;color:#555;margin-bottom:1rem;">Enter your email to verify and unlock editing.</p>
+    <div class="form-group">
+      <label>Your Email</label>
+      <input type="email" id="edit-email-input" placeholder="your@email.com">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="verifyEditEmail()">VERIFY →</button>
+      <button class="btn" style="background:var(--white);color:var(--black)" onclick="closeModal('edit-modal')">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Edit Fields -->
+<div class="modal-overlay" id="edit-fields-modal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-title">EDIT YOUR PROFILE</div>
+    <div id="edit-fields-content"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="saveProfileEdit()">SAVE CHANGES</button>
+      <button class="btn btn-pink" onclick="deleteProfile()">DELETE PROFILE</button>
+      <button class="btn" style="background:var(--white);color:var(--black)" onclick="closeModal('edit-fields-modal')">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== STATE =====
+let currentProfileId = null;
+let editingProfileId = null;
+const ADMIN_KEY = 'admin-approve';
+
+function getProfiles() {
+  return JSON.parse(localStorage.getItem('freeela_profiles') || '[]');
+}
+
+function saveProfiles(profiles) {
+  localStorage.setItem('freeela_profiles', JSON.stringify(profiles));
+}
+
+function getPending() {
+  return JSON.parse(localStorage.getItem('freeela_pending') || '[]');
+}
+
+function savePending(pending) {
+  localStorage.setItem('freeela_pending', JSON.stringify(pending));
+}
+
+// Seed data
+function seedData() {
+  if (getProfiles().length > 0) return;
+  const seed = [
+    { id: 'p1', name: 'Jordan Blake', role: 'Creative Director, Art', experience: '15 years', agencies: 'BBDO, Droga5', clients: 'Nike, Google, Spotify', industries: 'Tech, Sports, Fashion', visa: 'US Citizen', city: 'New York, NY', linkedin: '#', portfolio: '#', email: 'jordan@example.com', availability: 'available', busyDates: ['Jun 10–20', 'Jul 1–5'], photo: '', bio: 'Award-winning Creative Director with 15 years at top-tier agencies.' },
+    { id: 'p2', name: 'Alex Rivera', role: 'Art Director', experience: '11 years', agencies: 'Ogilvy, Leo Burnett', clients: 'Coca-Cola, Ford, P&G', industries: 'CPG, Automotive', visa: 'Green Card', city: 'Chicago, IL', linkedin: '#', portfolio: '#', email: 'alex@example.com', availability: 'unavailable', busyDates: ['May 15–Jun 30'], photo: '', bio: 'Conceptual thinker with a passion for visual storytelling.' },
+    { id: 'p3', name: 'Sam Torres', role: 'Copywriter', experience: '12 years', agencies: 'Wieden+Kennedy, R/GA', clients: 'Apple, Amazon, Netflix', industries: 'Tech, Entertainment', visa: 'US Citizen', city: 'Los Angeles, CA', linkedin: '#', portfolio: '#', email: 'sam@example.com', availability: 'available', busyDates: [], photo: '', bio: 'Wordsmith with a knack for brand voice and long-form storytelling.' },
+    { id: 'p4', name: 'Morgan Lee', role: 'Designer', experience: '10 years', agencies: 'Publicis, Grey', clients: 'L\'Oréal, Unilever, LVMH', industries: 'Beauty, Luxury, Fashion', visa: 'H-1B', city: 'Miami, FL', linkedin: '#', portfolio: '#', email: 'morgan@example.com', availability: 'available', busyDates: ['Jun 1–10'], photo: '', bio: 'Brand identity and packaging design specialist.' },
+    { id: 'p5', name: 'Casey Kim', role: 'Creative Director, Copy', experience: '14 years', agencies: 'DDB, McCann', clients: 'Microsoft, IBM, JP Morgan', industries: 'Finance, B2B, Tech', visa: 'US Citizen', city: 'Seattle, WA', linkedin: '#', portfolio: '#', email: 'casey@example.com', availability: 'available', busyDates: [], photo: '', bio: 'Strategic storyteller who bridges brand and business.' },
+  ];
+  saveProfiles(seed);
+}
+
+// ===== NAVIGATION =====
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) navEl.classList.add('active');
+  if (page === 'creatives') {
+    renderCreatives();
+    populateCityFilter();
+  }
+  if (page === 'admin') renderAdmin();
+  window.scrollTo(0, 0);
+}
+
+// ===== SEARCH / FILTER =====
+function searchTalent(e) {
+  e.preventDefault();
+  const roles = Array.from(document.getElementById('search-role').selectedOptions).map(o => o.value);
+  const city = document.getElementById('search-city').value.toLowerCase();
+  
+  if (roles.length > 0) document.getElementById('filter-role').value = roles[0];
+  if (city) document.getElementById('filter-search').value = city;
+  
+  showPage('creatives');
+}
+
+function populateCityFilter() {
+  const profiles = getProfiles();
+  const cities = [...new Set(profiles.map(p => p.city))].sort();
+  const sel = document.getElementById('filter-city');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">All Cities</option>' + cities.map(c => `<option value="${c}"${c===current?' selected':''}>${c}</option>`).join('');
+}
+
+function renderCreatives() {
+  const profiles = getProfiles();
+  const search = document.getElementById('filter-search').value.toLowerCase();
+  const role = document.getElementById('filter-role').value;
+  const avail = document.getElementById('filter-avail').value;
+  const city = document.getElementById('filter-city').value;
+
+  let filtered = profiles.filter(p => {
+    const matchSearch = !search || 
+      p.name.toLowerCase().includes(search) || 
+      p.agencies.toLowerCase().includes(search) || 
+      p.clients.toLowerCase().includes(search) ||
+      p.city.toLowerCase().includes(search);
+    const matchRole = !role || p.role === role;
+    const matchAvail = !avail || p.availability === avail;
+    const matchCity = !city || p.city === city;
+    return matchSearch && matchRole && matchAvail && matchCity;
+  });
+
+  const roleOrder = ['Creative Director, Art', 'Creative Director, Copy', 'Art Director', 'Copywriter', 'Designer'];
+  const grouped = {};
+  roleOrder.forEach(r => { grouped[r] = []; });
+  filtered.forEach(p => {
+    if (!grouped[p.role]) grouped[p.role] = [];
+    grouped[p.role].push(p);
+  });
+
+  const container = document.getElementById('talent-list');
+  let html = '';
+  let hasAny = false;
+
+  roleOrder.forEach(role => {
+    const group = grouped[role] || [];
+    if (group.length === 0) return;
+    hasAny = true;
+    html += `<div class="role-group">
+      <div class="role-label">${role.toUpperCase()}</div>
+      <div class="talent-grid">`;
+    group.forEach(p => {
+      const initials = p.name.split(' ').map(n=>n[0]).join('').toUpperCase();
+      const avatarColors = ['#FFE500','#FF3CAC','#00E676','#00B4FF','#FF6B35'];
+      const colorIdx = p.id.charCodeAt(1) % avatarColors.length;
+      const bgColor = avatarColors[colorIdx];
+      html += `<div class="talent-card" onclick="openProfile('${p.id}')">
+        <div class="talent-card-top">
+          <div class="talent-avatar" style="background:${bgColor}">
+            ${p.photo ? `<img src="${p.photo}" alt="${p.name}">` : initials}
+          </div>
+          <div>
+            <div class="talent-name">${p.name}</div>
+            <div class="talent-role-tag">${p.role}</div>
+          </div>
+        </div>
+        <div class="talent-card-bottom">
+          <span class="availability-badge ${p.availability === 'available' ? 'avail-yes' : 'avail-no'}">
+            ${p.availability === 'available' ? '✓ AVAILABLE' : '✗ UNAVAILABLE'}
+          </span>
+          <span class="talent-city">${p.city}</span>
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  if (!hasAny) html = '<div class="no-results">NO CREATIVES FOUND</div>';
+  container.innerHTML = html;
+}
+
+// ===== PROFILE =====
+function openProfile(id) {
+  const profiles = getProfiles();
+  const p = profiles.find(x => x.id === id);
+  if (!p) return;
+  currentProfileId = id;
+
+  const initials = p.name.split(' ').map(n=>n[0]).join('').toUpperCase();
+  const avatarColors = ['#FFE500','#FF3CAC','#00E676','#00B4FF','#FF6B35'];
+  const colorIdx = id.charCodeAt(1) % avatarColors.length;
+  const bgColor = avatarColors[colorIdx];
+
+  const datesHtml = p.busyDates && p.busyDates.length 
+    ? p.busyDates.map(d=>`<span class="cal-date">${d}</span>`).join('')
+    : '<span style="font-family:Space Mono,monospace;font-size:0.7rem;color:#888">No booked dates</span>';
+
+  document.getElementById('profile-content').innerHTML = `
+    <div class="profile-back"><a onclick="showPage('creatives')">← BACK TO CREATIVES</a></div>
+    
+    <div class="profile-hero">
+      <div class="profile-avatar-large" style="background:${bgColor}">
+        ${p.photo ? `<img src="${p.photo}" alt="${p.name}">` : initials}
+      </div>
+      <div class="profile-info">
+        <div class="profile-name">${p.name}</div>
+        <div class="profile-role">${p.role} · ${p.city}</div>
+        <div class="profile-tags">
+          <span class="tag">${p.experience}</span>
+          <span class="tag">${p.visa}</span>
+          <span class="availability-badge ${p.availability === 'available' ? 'avail-yes' : 'avail-no'}" style="margin-top:0">
+            ${p.availability === 'available' ? '✓ AVAILABLE' : '✗ UNAVAILABLE'}
+          </span>
+        </div>
+        ${p.bio ? `<p style="margin-top:1.2rem;line-height:1.7;max-width:500px">${p.bio}</p>` : ''}
+        <div style="display:flex;gap:1rem;margin-top:1.5rem;flex-wrap:wrap">
+          ${p.linkedin && p.linkedin !== '#' ? `<a href="${p.linkedin}" target="_blank" class="btn" style="font-size:0.9rem;padding:0.5rem 1rem">LINKEDIN ↗</a>` : ''}
+          ${p.portfolio && p.portfolio !== '#' ? `<a href="${p.portfolio}" target="_blank" class="btn btn-pink" style="font-size:0.9rem;padding:0.5rem 1rem">PORTFOLIO ↗</a>` : ''}
+          <a href="mailto:${p.email}" class="btn" style="font-size:0.9rem;padding:0.5rem 1rem;background:var(--green);color:var(--black)">EMAIL ↗</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-body">
+      <div class="profile-col">
+        <div class="profile-section-title">BACKGROUND</div>
+        <p><strong>Agencies:</strong> ${p.agencies}</p>
+        <p style="margin-top:0.7rem"><strong>Main Clients:</strong> ${p.clients}</p>
+        <p style="margin-top:0.7rem"><strong>Industries:</strong> ${p.industries}</p>
+      </div>
+      <div class="profile-col">
+        <div class="profile-section-title">AVAILABILITY</div>
+        <span class="availability-badge ${p.availability === 'available' ? 'avail-yes' : 'avail-no'}" style="font-size:0.9rem;padding:0.4rem 1rem">
+          ${p.availability === 'available' ? '✓ AVAILABLE FOR WORK' : '✗ CURRENTLY UNAVAILABLE'}
+        </span>
+        <div class="avail-calendar">
+          <div class="cal-title">BOOKED DATES:</div>
+          <div class="cal-dates">${datesHtml}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-edit-bar">
+      <span style="font-family:'Space Mono',monospace;font-size:0.8rem;color:#666">Own this profile?</span>
+      <button class="btn" style="font-size:0.9rem;padding:0.5rem 1.2rem" onclick="openEditModal('${p.id}')">EDIT / DELETE PROFILE</button>
+    </div>
+  `;
+
+  showPage('profile');
+}
+
+// ===== EDIT / DELETE =====
+function openEditModal(id) {
+  editingProfileId = id;
+  document.getElementById('edit-email-input').value = '';
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function verifyEditEmail() {
+  const profiles = getProfiles();
+  const p = profiles.find(x => x.id === editingProfileId);
+  const input = document.getElementById('edit-email-input').value.trim();
+  
+  if (p && input.toLowerCase() === p.email.toLowerCase()) {
+    closeModal('edit-modal');
+    openEditFields(p);
+  } else {
+    showToast('❌ Email does not match. Try again.');
+  }
+}
+
+function openEditFields(p) {
+  document.getElementById('edit-fields-content').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-height:60vh;overflow-y:auto;padding:0.5rem 0">
+      <div class="form-group"><label>Full Name</label><input id="ef-name" value="${p.name}"></div>
+      <div class="form-group"><label>Role</label><select id="ef-role">
+        <option ${p.role==='Creative Director, Art'?'selected':''}>Creative Director, Art</option>
+        <option ${p.role==='Creative Director, Copy'?'selected':''}>Creative Director, Copy</option>
+        <option ${p.role==='Art Director'?'selected':''}>Art Director</option>
+        <option ${p.role==='Copywriter'?'selected':''}>Copywriter</option>
+        <option ${p.role==='Designer'?'selected':''}>Designer</option>
+      </select></div>
+      <div class="form-group"><label>City</label><input id="ef-city" value="${p.city}"></div>
+      <div class="form-group"><label>Availability</label><select id="ef-avail">
+        <option value="available" ${p.availability==='available'?'selected':''}>Available</option>
+        <option value="unavailable" ${p.availability==='unavailable'?'selected':''}>Unavailable</option>
+      </select></div>
+      <div class="form-group"><label>Agencies</label><input id="ef-agencies" value="${p.agencies}"></div>
+      <div class="form-group"><label>Clients</label><input id="ef-clients" value="${p.clients}"></div>
+      <div class="form-group"><label>Industries</label><input id="ef-industries" value="${p.industries}"></div>
+      <div class="form-group"><label>Booked Dates (comma separated)</label><input id="ef-dates" value="${(p.busyDates||[]).join(', ')}"></div>
+      <div class="form-group" style="grid-column:1/-1"><label>Bio</label><textarea id="ef-bio">${p.bio||''}</textarea></div>
+      <div class="form-group"><label>Photo URL</label><input id="ef-photo" value="${p.photo||''}" placeholder="https://..."></div>
+      <div class="form-group"><label>LinkedIn</label><input id="ef-linkedin" value="${p.linkedin||''}"></div>
+      <div class="form-group"><label>Portfolio</label><input id="ef-portfolio" value="${p.portfolio||''}"></div>
+    </div>
+  `;
+  document.getElementById('edit-fields-modal').classList.add('open');
+}
+
+function saveProfileEdit() {
+  const profiles = getProfiles();
+  const idx = profiles.findIndex(x => x.id === editingProfileId);
+  if (idx === -1) return;
+  
+  profiles[idx] = {
+    ...profiles[idx],
+    name: document.getElementById('ef-name').value,
+    role: document.getElementById('ef-role').value,
+    city: document.getElementById('ef-city').value,
+    availability: document.getElementById('ef-avail').value,
+    agencies: document.getElementById('ef-agencies').value,
+    clients: document.getElementById('ef-clients').value,
+    industries: document.getElementById('ef-industries').value,
+    busyDates: document.getElementById('ef-dates').value.split(',').map(s=>s.trim()).filter(Boolean),
+    bio: document.getElementById('ef-bio').value,
+    photo: document.getElementById('ef-photo').value,
+    linkedin: document.getElementById('ef-linkedin').value,
+    portfolio: document.getElementById('ef-portfolio').value,
+  };
+  
+  saveProfiles(profiles);
+  closeModal('edit-fields-modal');
+  showToast('✓ Profile updated!');
+  openProfile(editingProfileId);
+}
+
+function deleteProfile() {
+  if (!confirm('Are you sure you want to delete this profile? This cannot be undone.')) return;
+  const profiles = getProfiles().filter(x => x.id !== editingProfileId);
+  saveProfiles(profiles);
+  closeModal('edit-fields-modal');
+  showToast('Profile deleted.');
+  showPage('creatives');
+}
+
+// ===== APPLY =====
+function submitApplication(e, source) {
+  e.preventDefault();
+  const form = e.target;
+  const data = {};
+  new FormData(form).forEach((v, k) => data[k] = v);
+  data.id = 'pending_' + Date.now();
+  data.availability = 'available';
+  data.busyDates = [];
+  data.photo = '';
+  data.bio = '';
+
+  const pending = getPending();
+  pending.push(data);
+  savePending(pending);
+  form.reset();
+  showToast('✓ Application submitted! It\'s pending admin approval.');
+}
+
+// ===== ADMIN =====
+function renderAdmin() {
+  const pending = getPending();
+  const container = document.getElementById('admin-list');
+  
+  if (pending.length === 0) {
+    container.innerHTML = '<div class="no-results">NO PENDING APPLICATIONS</div>';
+    return;
+  }
+
+  container.innerHTML = pending.map(p => `
+    <div class="admin-card" id="admin-${p.id}">
+      <div class="admin-card-header">
+        <span>${p.name || 'No name'} — ${p.role}</span>
+        <span style="color:#555">${p.city}</span>
+      </div>
+      <div class="admin-card-body">
+        <p><strong>Experience:</strong> ${p.experience}</p>
+        <p><strong>Agencies:</strong> ${p.agencies}</p>
+        <p><strong>Clients:</strong> ${p.clients}</p>
+        <p><strong>Industries:</strong> ${p.industries}</p>
+        <p><strong>Visa:</strong> ${p.visa}</p>
+        <p><strong>LinkedIn:</strong> ${p.linkedin}</p>
+        <p><strong>Portfolio:</strong> ${p.portfolio}</p>
+        <p><strong>Email:</strong> ${p.email}</p>
+        <div class="admin-actions" style="margin-top:1.2rem">
+          <button class="btn btn-approve" onclick="approveApplication('${p.id}')">✓ APPROVE</button>
+          <button class="btn btn-reject" onclick="rejectApplication('${p.id}')">✗ REJECT</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function approveApplication(id) {
+  const pending = getPending();
+  const app = pending.find(x => x.id === id);
+  if (!app) return;
+  
+  app.id = 'p_' + Date.now();
+  const profiles = getProfiles();
+  profiles.push(app);
+  saveProfiles(profiles);
+  savePending(pending.filter(x => x.id !== id));
+  
+  document.getElementById('admin-' + id)?.remove();
+  showToast('✓ Profile approved and published!');
+  renderAdmin();
+}
+
+function rejectApplication(id) {
+  savePending(getPending().filter(x => x.id !== id));
+  document.getElementById('admin-' + id)?.remove();
+  showToast('Application rejected.');
+  renderAdmin();
+}
+
+// ===== UTILS =====
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Secret admin: click footer brand 5 times
+let adminClicks = 0;
+document.querySelector('.footer-brand').addEventListener('click', () => {
+  adminClicks++;
+  if (adminClicks >= 5) {
+    adminClicks = 0;
+    showPage('admin');
+  }
+});
+
+// Init
+seedData();
+renderCreatives();
+populateCityFilter();
+</script>
+</body>
+</html>
