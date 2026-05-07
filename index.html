@@ -1033,7 +1033,7 @@
   </div>
   <a href="mailto:alexandrekubo@gmail.com" class="footer-email">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>
-    alexandrekubo@gmail.com
+    GET IN TOUCH
   </a>
 </footer>
 
@@ -1394,8 +1394,8 @@ function renderAdmin() {
         <p><strong>Portfolio:</strong> ${p.portfolio}</p>
         <p><strong>Email:</strong> ${p.email}</p>
         <div class="admin-actions" style="margin-top:1.2rem">
-          <button class="btn btn-approve" onclick="approveApplication('${p.id}')">✓ APPROVE</button>
-          <button class="btn btn-reject" onclick="rejectApplication('${p.id}')">✗ REJECT</button>
+          <button class="btn btn-approve" data-id="${p.id}" onclick="approveApplication(this.dataset.id)">✓ APPROVE</button>
+          <button class="btn btn-reject" data-id="${p.id}" onclick="rejectApplication(this.dataset.id)">✗ REJECT</button>
         </div>
       </div>
     </div>
@@ -1403,22 +1403,36 @@ function renderAdmin() {
 }
 
 function approveApplication(id) {
+  console.log('Approving id:', id);
   const pending = getPending();
+  console.log('Pending list:', pending.map(x => x.id));
+
   const appIndex = pending.findIndex(x => x.id === id);
-  if (appIndex === -1) return;
-  
-  const app = { ...pending[appIndex] };
+  console.log('Found at index:', appIndex);
+  if (appIndex === -1) {
+    showToast('Error: application not found.');
+    return;
+  }
+
+  const app = Object.assign({}, pending[appIndex]);
   app.id = 'p_' + Date.now();
-  
+  app.availability = app.availability || 'available';
+  app.busyDates = app.busyDates || [];
+  app.photo = app.photo || '';
+  app.bio = app.bio || '';
+  console.log('New profile to save:', app.name, app.role);
+
   const profiles = getProfiles();
   profiles.push(app);
   saveProfiles(profiles);
-  
+  console.log('Total profiles now:', profiles.length);
+
   pending.splice(appIndex, 1);
   savePending(pending);
-  
-  document.getElementById('admin-' + id)?.remove();
-  showToast('✓ Profile approved and published!');
+
+  const el = document.getElementById('admin-' + id);
+  if (el) el.remove();
+  showToast('Profile approved and published!');
   renderAdmin();
 }
 
